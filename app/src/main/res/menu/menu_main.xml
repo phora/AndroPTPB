@@ -1,0 +1,12 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context=".MainActivity">
+    <item android:id="@+id/action_prune"
+          android:icon="@android:drawable/ic_menu_delete"
+          android:showAsAction="ifRoom"
+          android:title="@string/prune"/>
+    <item android:id="@+id/action_preferences"
+          android:icon="@android:drawable/ic_menu_preferences"
+          android:showAsAction="ifRoom"
+          android:title="@string/preferences"/>
+</menu>

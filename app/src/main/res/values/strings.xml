@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">AndroPTPB</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="upload_file">Upload File</string>
+    <string name="add_server">Add Server</string>
+    <string name="preferences">Preferences</string>
+
+    <string name="message">Copied URLs</string>
+    <string name="prune">Remove expired entries</string>
+    <string name="toast_copy">Copied links to clipboard</string>
+    <string name="toast_copy_zip">Copied zipped links to clipboard</string>
+    <string name="header_share">Share links!</string>
+    <string name="header_share_zip">Share zipped links!</string>
+    <string name="select_items">Select items</string>
+    <string name="single_item">1 item selected</string>
+    <string name="multiple_items">%1$s items selected</string>
+    <string name="picked_multiple">Picked %1$s files</string>
+    <string name="picked_single">Picked 1 file</string>
+    <string name="choose_files">Choose files to upload</string>
+    <string-array name="server_prefixes">
+        <item>http://</item>
+        <item>https://</item>
+    </string-array>
+
+    <string name="title_activity_upload_options">Upload Options</string>
+    <string name="title_activity_server_settings">Servers</string>
+    <string name="Main.AddItem">Add item</string>
+    <string name="MainActivity_NoBlank_Text">You can\'t submit blank text!</string>
+    <string name="OK">OK</string>
+    <string name="Cancel">Cancel</string>
+    <string name="ContentDescriptionDivider">divider</string>
+</resources>

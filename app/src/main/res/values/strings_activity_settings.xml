@@ -1,0 +1,11 @@
+<resources>
+    <string name="title_activity_settings">Preferences</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+    <string name="title_is_dark">Dark Theme?</string>
+    <string name="pref_is_dark">You will need to restart the app to apply this.</string>
+
+</resources>
