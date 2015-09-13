@@ -44,6 +44,7 @@ import io.github.phora.androptpb.adapters.UploadsCursorAdapter;
 import io.github.phora.androptpb.network.NetworkUtils;
 import io.github.phora.androptpb.R;
 import io.github.phora.androptpb.network.RequestData;
+import io.github.phora.androptpb.network.UUIDLocalIDPair;
 import io.github.phora.androptpb.network.UploadData;
 
 public class MainActivity extends ListActivity {
@@ -67,6 +68,76 @@ public class MainActivity extends ListActivity {
         public MsgOrInt(String msg, int progress) {
             this.msg = msg;
             this.progress = progress;
+        }
+    }
+
+    private class DeleteFilesTask extends AsyncTask<UUIDLocalIDPair, MsgOrInt, List<Long>> {
+        ProgressDialog pd;
+
+        @Override
+        protected List<Long> doInBackground(UUIDLocalIDPair... uuidLocalIDPairs) {
+            LinkedList<Long> output = new LinkedList<>();
+            int count = uuidLocalIDPairs.length;
+            if (count < 1) return null;
+
+            pd.setMax(count + 1);
+
+            NetworkUtils nm = NetworkUtils.getInstance(getApplicationContext());
+
+            for (int i=0;i<uuidLocalIDPairs.length;i++) {
+                UUIDLocalIDPair item = uuidLocalIDPairs[i];
+                String server_url = item.getServer();
+                String uuid = item.getUUID();
+                String delete_url = String.format("%1$s/%2$s", server_url, uuid);
+                HttpURLConnection connection = nm.openConnection(delete_url,
+                        NetworkUtils.METHOD_DELETE);
+
+                Log.d("DeleteFilesTask", connection.getRequestMethod());
+
+                String filemsg = String.format("Removing %s/%s files", i+1, count);
+                this.publishProgress(new MsgOrInt(filemsg, pd.getProgress()));
+
+                NetworkUtils.DeleteResult delResult = nm.getDeleteResult(connection);
+                if (delResult == NetworkUtils.DeleteResult.SUCCESS) {
+                    // some message about how we're deleting local entry and remote copy
+                    output.add(item.getLocalId());
+                }
+                else if (delResult == NetworkUtils.DeleteResult.ALREADY_GONE) {
+                    // some message about how we're just deleting local entry
+                    output.add(item.getLocalId());
+                }
+                else {
+                    // some message about how we couldn't delete the file
+                }
+            }
+
+            return output;
+        }
+
+        @Override
+        protected void onProgressUpdate(MsgOrInt... values) {
+            if (values[0].msg != null) {
+                pd.setMessage(values[0].msg);
+            }
+            pd.setProgress(values[0].progress);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            pd = new ProgressDialog(context);
+            pd.setTitle("Submitting urls...");
+            pd.setCancelable(false);
+            pd.setIndeterminate(false);
+            pd.show();
+        }
+
+        @Override
+        protected void onPostExecute(List<Long> ids) {
+            pd.dismiss();
+            Log.d("MainActivity", "Got delete history "+(ids != null)+", updating GUI");
+            if (ids != null) {
+                deleteUploads(ids);
+            }
         }
     }
 
@@ -365,6 +436,10 @@ public class MainActivity extends ListActivity {
                         intent.putExtra(Intent.EXTRA_TEXT, s);
                         startActivity(Intent.createChooser(intent, getString(R.string.header_share)));
                         break;
+                    case R.id.delete:
+                        Log.d("ItemCAB", "Deleting");
+                        UUIDLocalIDPair[] deleteItems = getDeleteCandidates();
+                        new DeleteFilesTask().execute(deleteItems);
                 }
                 return false;
             }
@@ -396,6 +471,21 @@ public class MainActivity extends ListActivity {
             Log.d("MainActivity", "Doing GUI interaction");
             //other stuff
         } */
+    }
+
+    private UUIDLocalIDPair[] getDeleteCandidates() {
+        SparseBooleanArray selection = getListView().getCheckedItemPositions();
+        LinkedList<UUIDLocalIDPair> items = new LinkedList<>();
+        for (int i=0;i<getListAdapter().getCount();i++) {
+            if (selection.get(i, false)) {
+                Cursor c = (Cursor)getListView().getItemAtPosition(i);
+                String uuid = c.getString(c.getColumnIndex(DBHelper.UPLOAD_UUID));
+                String base_url = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
+                long localID = c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID));
+                items.add(new UUIDLocalIDPair(base_url, uuid, localID));
+            }
+        }
+        return items.toArray(new UUIDLocalIDPair[items.size()]);
     }
 
     public String getBatchSeparate() {
@@ -603,6 +693,12 @@ public class MainActivity extends ListActivity {
 
         UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();
         adap.changeCursor(sqlhelper.getAllUploads()); //only do this if we really need to
+    }
+
+    private void deleteUploads(List<Long> ids) {
+        sqlhelper.deleteUploads(ids);
+        UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();
+        adap.changeCursor(sqlhelper.getAllUploads());
     }
 
     @Override

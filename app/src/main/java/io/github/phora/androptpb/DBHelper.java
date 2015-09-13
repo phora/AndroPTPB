@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.List;
+
 /**
  * Created by phora on 8/19/15.
  */
@@ -241,5 +243,32 @@ public class DBHelper extends SQLiteOpenHelper {
         whereArgs[0] = String.valueOf(oldID);
 
         getWritableDatabase().delete(TABLE_SERVERS, whereClause, whereArgs);
+    }
+
+    public void deleteUploads(List<Long> ids) {
+        int count = ids.size();
+        if (count == 0)
+            return;
+        String whereClause = String.format("_id in (%s)", makePlaceholders(count));
+        String[] whereArgs = new String[count];
+        for (int i = 0; i<count; i++) {
+            whereArgs[i] = ids.get(i).toString();
+        }
+
+        getWritableDatabase().delete(TABLE_UPLOADS, whereClause, whereArgs);
+    }
+
+    public static String makePlaceholders(int len) {
+        if (len < 1) {
+            // It will lead to an invalid query anyway ..
+            throw new RuntimeException("No placeholders");
+        } else {
+            StringBuilder sb = new StringBuilder(len * 2 - 1);
+            sb.append("?");
+            for (int i = 1; i < len; i++) {
+                sb.append(",?");
+            }
+            return sb.toString();
+        }
     }
 }

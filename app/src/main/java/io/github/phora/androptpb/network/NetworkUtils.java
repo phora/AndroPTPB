@@ -34,6 +34,9 @@ public class NetworkUtils {
     public final static String METHOD_GET = "GET";
     public final static String METHOD_DELETE = "DELETE";
 
+    public enum DeleteResult {
+        SUCCESS, NO_CONN, ALREADY_GONE
+    }
 
     public static NetworkUtils getInstance(Context ctxt) {
         if (nm == null) {
@@ -73,12 +76,14 @@ public class NetworkUtils {
                     server_path = loc; //needed?
                     url = new URL(loc);
                 }
-                conn = (HttpsURLConnection) url.openConnection();
+                conn = (HttpURLConnection) url.openConnection();
 
                 conn.setRequestMethod(method);
                 conn.setUseCaches(false);
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
+                if (!method.equals(METHOD_DELETE)) {
+                    conn.setDoInput(true);
+                    conn.setDoOutput(true);
+                }
 
                 conn.setRequestProperty("User-Agent", "AndroPTPB");
                 conn.setRequestProperty("Expect", "100-continue");
@@ -91,11 +96,32 @@ public class NetworkUtils {
         }
         catch (IOException e) {
             //some error handling
-            Log.d("NetworkManager", "Failed uploads: "+e.getMessage());
+            Log.d("NetworkManager", "Failed uploads: " + e.getMessage());
             return null;
         }
 
         return null;
+    }
+
+    public DeleteResult getDeleteResult(HttpURLConnection conn) {
+        try {
+            //conn.connect();
+            int respCode = conn.getResponseCode();
+            if (respCode == HttpURLConnection.HTTP_OK) {
+                return DeleteResult.SUCCESS;
+            }
+            else if (respCode == HttpURLConnection.HTTP_NOT_FOUND)
+            {
+                return DeleteResult.ALREADY_GONE;
+            }
+            else {
+                return DeleteResult.NO_CONN;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return DeleteResult.NO_CONN;
+        }
     }
 
     public UploadData getUploadResult(String server_path, boolean is_private, HttpURLConnection conn) throws IOException {
