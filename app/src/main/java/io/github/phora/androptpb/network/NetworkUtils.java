@@ -173,7 +173,7 @@ public class NetworkUtils {
                         }
                         else if (sunset == null && data.startsWith("sunset: ")) {
                             try {
-                                Date date = fmt.parse(data);
+                                Date date = fmt.parse(data.replaceFirst("sunset: ", ""));
                                 sunset = date.getTime() / 1000;
                             }
                             catch (ParseException e) {

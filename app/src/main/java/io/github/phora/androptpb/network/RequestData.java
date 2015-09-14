@@ -30,17 +30,17 @@ public class RequestData {
     }
 
     public void addPrivacy() throws IOException {
-        request.writeBytes(hyphens + boundary + crlf);
         request.writeBytes("Content-Disposition: form-data; name=\"p\"" + crlf);
         request.writeBytes(crlf);
         request.writeBytes("1" + crlf);
+        request.writeBytes(hyphens + boundary + crlf);
     }
 
     public void addSunset(long sunset) throws IOException {
-        request.writeBytes(hyphens + boundary + crlf);
         request.writeBytes("Content-Disposition: form-data; name=\"s\"" + crlf);
         request.writeBytes(crlf);
         request.writeBytes(sunset + crlf);
+        request.writeBytes(hyphens + boundary + crlf);
     }
 
     public void addRawData(byte[] bArray) throws IOException {
