@@ -155,7 +155,7 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().insert(TABLE_SERVERS, null, cv);
     }
 
-    public long addUpload(String base_url, String token, String vanity, String uuid, String sha1sum, boolean is_private, Long sunset) {
+    public long addUpload(String base_url, String token, String vanity, String uuid, String sha1sum, boolean is_private, Long sunset, String upload_hint) {
         ContentValues cv = new ContentValues();
         cv.put(BASE_URL, base_url);
         cv.put(UPLOAD_TOKEN, token);
@@ -164,6 +164,7 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put(UPLOAD_SHA1, sha1sum);
         cv.put(UPLOAD_PRIVATE, is_private);
         cv.put(UPLOAD_SUNSET, sunset);
+        cv.put(UPLOAD_HINT, upload_hint);
 
         SQLiteDatabase database = getWritableDatabase();
         return database.insert(TABLE_UPLOADS, null, cv);
@@ -181,8 +182,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 "ELSE ( "+ BASE_URL + " || '/' || " + UPLOAD_TOKEN + " || " + UPLOAD_HINT +" ) " +
                 "END AS complete_url";
         String MAKE_HVANITY_EXPR = "CASE WHEN ("+ UPLOAD_HINT +" IS NULL) " +
-                "THEN ( "+ BASE_URL +" || '/~' || "+ UPLOAD_VANITY +" ) " +
-                "ELSE ( "+ BASE_URL +" || '/~' || "+ UPLOAD_VANITY +" || "+UPLOAD_HINT+" ) " +
+                "THEN ( "+ BASE_URL +" || '/' || "+ UPLOAD_VANITY +" ) " +
+                "ELSE ( "+ BASE_URL +" || '/' || "+ UPLOAD_VANITY +" || "+UPLOAD_HINT+" ) " +
                 "END AS hvanity_url";
         /* String BIG_HEADER = "CASE WHEN (" + UPLOADED_FPATH + " IS NULL ) " +
                 "THEN '(multiple)'  " +

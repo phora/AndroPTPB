@@ -3,6 +3,7 @@ package io.github.phora.androptpb.network;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -17,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -142,6 +144,7 @@ public class NetworkUtils {
             String sha1 = null;
             String uuid = null;
             String vanity = null;
+            String detected_hint = null;
             Long sunset = null;
 
             DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSZZZZZ", Locale.ENGLISH);
@@ -178,10 +181,26 @@ public class NetworkUtils {
                                 continue;
                             }
                         }
+                        else if (detected_hint == null && data.startsWith("url: ")) {
+                            String trimmed_data = data.replaceFirst("url: ", "");
+                            String full_url = "%1$s/%2$s";
+                            if (vanity != null) {
+                                String remove_for_hint = String.format(full_url, server_path, vanity);
+                                detected_hint = trimmed_data.replaceFirst(Pattern.quote(remove_for_hint), "");
+                            }
+                            else {
+                                String remove_for_hint = String.format(full_url, server_path, token);
+                                detected_hint = trimmed_data.replaceFirst(Pattern.quote(remove_for_hint), "");
+                            }
+                            if (TextUtils.isEmpty(detected_hint)) {
+                                detected_hint = null;
+                            }
+                        }
                     }
                     else {
                         if (token != null && sha1 != null && uuid != null) {
-                            output = new UploadData(server_path, token, uuid, sha1, is_private, sunset);
+                            output = new UploadData(server_path, token, vanity, uuid, sha1, is_private, sunset);
+                            output.setPreferredHint(detected_hint);
                         }
                         isReading = false;
                     }
@@ -238,7 +257,7 @@ public class NetworkUtils {
                     data = br.readLine();
                     if (data != null) {
                         token = data.replaceFirst(server_path+"/", "");
-                        output = new UploadData(server_path, token, null, null, false, null);
+                        output = new UploadData(server_path, token, null, null, null, false, null);
                     }
                     else {
                         isReading = false;

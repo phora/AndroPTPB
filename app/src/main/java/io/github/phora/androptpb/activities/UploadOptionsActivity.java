@@ -53,7 +53,9 @@ public class UploadOptionsActivity extends Activity {
             Intent intent = getIntent();
             if (intent.getClipData() != null) {
                 clippy = getIntent().getClipData();
-                mHasVanity.setEnabled(false);
+                if (clippy.getItemCount() > 1) {
+                    mHasVanity.setEnabled(false);
+                }
             }
             else if (intent.getData() != null) {
                 data = getIntent().getData();

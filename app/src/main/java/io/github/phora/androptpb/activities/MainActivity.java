@@ -20,6 +20,7 @@ import android.util.SparseBooleanArray;
 import android.view.ActionMode;
 import android.view.MenuInflater;
 import android.view.View;
+import android.webkit.URLUtil;
 import android.widget.AbsListView.MultiChoiceModeListener;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
@@ -456,21 +457,45 @@ public class MainActivity extends ListActivity {
                 sqlhelper.getAllServers(), server_data, server_rsc, CursorAdapter.FLAG_AUTO_REQUERY);
         server_spinner.setAdapter(serv_adap);
 
-        /* if ((Intent.ACTION_SEND.equals(action) || Intent.ACTION_SEND_MULTIPLE.equals(action)) && type != null) {
-            Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
-            String server_path = selected_server.getString(selected_server.getColumnIndex(AndroTSHSQLiteHelper.BASE_URL));
+        if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
             ClipData clippy = intent.getClipData();
             Log.d("MainActivity", "Received " + clippy.getItemCount() + " files from another app");
-            LinkedList<Uri> all_the_files = new LinkedList<Uri>();
-            for (int i=0;i<clippy.getItemCount();i++) {
-                all_the_files.add(clippy.getItemAt(i).getUri());
+            //shouldn't the share be sent directly to the uploads option?
+            Intent preserve_this = new Intent(this, UploadOptionsActivity.class);
+            preserve_this.setClipData(clippy);
+            startActivityForResult(preserve_this, OPTIONS_SET_MULTIPLE);
+
+        }
+        else if (Intent.ACTION_SEND.equals(action) && type != null) {
+            String mimetype = intent.getType();
+            if (mimetype.equals("text/plain")) {
+                String text_data = intent.getStringExtra(Intent.EXTRA_TEXT);
+                boolean isUrl = (URLUtil.isHttpsUrl(text_data) || URLUtil.isHttpUrl(text_data));
+                if (isUrl) {
+                    Log.d("MainActivity", "Received redirect from share");
+                    Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
+                    String server_path = selected_server.getString(selected_server.getColumnIndex(DBHelper.BASE_URL));
+                    new ShortenURLTask(server_path).execute(text_data);
+                } else {
+                    Log.d("MainActivity", "Received raw text from share");
+                    Intent preserve_this = new Intent(MainActivity.this,
+                            UploadOptionsActivity.class);
+                    preserve_this.putExtra(UploadOptionsActivity.EXTRA_RAW_TEXT, text_data);
+                    startActivityForResult(preserve_this, OPTIONS_SET_SINGLE_RAW_TEXT);
+                }
             }
-            new UploadFilesTask(server_path).execute(all_the_files);
+            else if (intent.getClipData() != null) {
+                Log.d("MainActivity", "Received 1 file from share");
+                Intent preserve_this = new Intent(MainActivity.this,
+                        UploadOptionsActivity.class);
+                preserve_this.setData(intent.getClipData().getItemAt(0).getUri());
+                startActivityForResult(preserve_this, OPTIONS_SET_SINGLE);
+            }
         }
         else {
             Log.d("MainActivity", "Doing GUI interaction");
             //other stuff
-        } */
+        }
     }
 
     private UUIDLocalIDPair[] getDeleteCandidates() {
@@ -688,7 +713,7 @@ public class MainActivity extends ListActivity {
     private void addUploads(List<UploadData> uploads) {
         for (UploadData ud: uploads) {
             sqlhelper.addUpload(ud.getServerUrl(), ud.getToken(), ud.getVanity(), ud.getUUID(), ud.getSha1sum(),
-                    ud.getIsPrivate(), ud.getSunset());
+                    ud.getIsPrivate(), ud.getSunset(), ud.getPreferredHint());
         }
 
         UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();

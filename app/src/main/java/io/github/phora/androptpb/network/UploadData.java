@@ -11,14 +11,16 @@ public class UploadData {
     private String sha1sum;
     private boolean is_private;
     private Long sunset;
+    private String preferred_hint;
 
-    public UploadData(String server_url, String token, String uuid, String sha1sum, boolean is_private, Long sunset) {
+    public UploadData(String server_url, String token, String vanity, String uuid, String sha1sum, boolean is_private, Long sunset) {
         this.server_url = server_url;
         this.token = token;
         this.uuid = uuid;
         this.sha1sum = sha1sum;
         this.is_private = is_private;
         this.sunset = sunset;
+        this.vanity = vanity;
     }
 
     public String getServerUrl() {
@@ -75,5 +77,13 @@ public class UploadData {
 
     public void setVanity(String vanity) {
         this.vanity = vanity;
+    }
+
+    public String getPreferredHint() {
+        return preferred_hint;
+    }
+
+    public void setPreferredHint(String preferred_hint) {
+        this.preferred_hint = preferred_hint;
     }
 }
