@@ -23,6 +23,11 @@
         <item>http://</item>
         <item>https://</item>
     </string-array>
+    <string-array name="edit_options">
+        <item>Edit paste hint</item>
+        <item>Replace content with file</item>
+        <item>Replace content with raw text</item>
+    </string-array>
 
     <string name="title_activity_upload_options">Upload Options</string>
     <string name="title_activity_server_settings">Servers</string>

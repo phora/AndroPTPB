@@ -36,10 +36,11 @@ public class NetworkUtils {
     public final static String METHOD_GET = "GET";
     public final static String METHOD_DELETE = "DELETE";
 
-    public enum DeleteResult {
-        SUCCESS, NO_CONN, ALREADY_GONE
-    }
 
+
+    public enum DeleteResult {
+        SUCCESS, NO_CONN, ALREADY_GONE;
+    }
     public static NetworkUtils getInstance(Context ctxt) {
         if (nm == null) {
             nm = new NetworkUtils(ctxt);
@@ -52,7 +53,6 @@ public class NetworkUtils {
     }
 
     public HttpURLConnection openConnection(String server_path, String method) {
-
         URL url = null;
 
         try {
@@ -103,6 +103,75 @@ public class NetworkUtils {
         }
 
         return null;
+    }
+
+    public UploadData getReplaceResult(HttpURLConnection conn, String server_path, boolean is_private) throws IOException {
+        UploadData output = null;
+
+        //should we flush request manually before going in here?
+        conn.getOutputStream().flush();
+        InputStream stream = conn.getInputStream();
+
+        if (stream != null) {
+            Log.d("NetworkManager", "Got response for uploads, reading now");
+            InputStreamReader isr = new InputStreamReader(stream);
+            BufferedReader br = new BufferedReader(isr);
+            boolean isReading = true;
+            String data;
+
+            String token = null;
+            String sha1 = null;
+            String detected_hint = null;
+
+            do {
+                try {
+                    data = br.readLine();
+
+                    if (data != null) {
+                        if (token == null && (data.startsWith("long: ") || data.startsWith("short: "))) {
+                            if (is_private && data.startsWith("long: ")) {
+                                token = data.replaceFirst("long: ", "");
+                            }
+                            else if (!is_private && data.startsWith("short: ")) {
+                                token = data.replaceFirst("short: ", "");
+                            }
+                        }
+                        else if (sha1 == null && data.startsWith("sha1: ")) {
+                            sha1 = data.replaceFirst("sha1: ", "");
+                        }
+                        else if (detected_hint == null && data.startsWith("url: ")) {
+                            String trimmed_data = data.replaceFirst("url: ", "");
+                            String full_url = "%1$s/%2$s";
+
+                            String remove_for_hint = String.format(full_url, server_path, token);
+                            detected_hint = trimmed_data.replaceFirst(Pattern.quote(remove_for_hint), "");
+
+                            if (TextUtils.isEmpty(detected_hint)) {
+                                detected_hint = null;
+                            }
+                        }
+                    }
+                    else {
+                        if (token != null && sha1 != null) {
+                            output = new UploadData(null, token, null, null, sha1, is_private, null);
+                            output.setPreferredHint(detected_hint);
+                        }
+                        isReading = false;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    isReading = false;
+                }
+            } while (isReading);
+
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        Log.d("NetworkManager", "Finished uploads");
+        return output;
     }
 
     public DeleteResult getDeleteResult(HttpURLConnection conn) {

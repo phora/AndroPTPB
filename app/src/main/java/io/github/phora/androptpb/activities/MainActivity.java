@@ -36,8 +36,10 @@ import android.widget.Toast;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import io.github.phora.androptpb.DBHelper;
 import io.github.phora.androptpb.UriOrRaw;
@@ -57,10 +59,12 @@ public class MainActivity extends ListActivity {
     static final int OPTIONS_SET_SINGLE = 2;
     static final int OPTIONS_SET_SINGLE_RAW_TEXT = 3;
     static final int OPTIONS_SET_MULTIPLE = 4;
+    static final int OPTIONS_REPLACE_SINGLE = 5;
 
     private DBHelper sqlhelper;
     private Context context;
     private boolean actionModeEnabled;
+    private UUIDLocalIDPair editingIdentifier = null;
 
     private class MsgOrInt {
         public String msg;
@@ -346,7 +350,96 @@ public class MainActivity extends ListActivity {
         }
     }
 
+    private class ReplaceFilesTask extends AsyncTask<UUIDLocalIDPair, MsgOrInt, Map<Long, UploadData>> {
+        ProgressDialog pd;
+
+        @Override
+        protected Map<Long, UploadData> doInBackground(UUIDLocalIDPair... uuidLocalIDPairs) {
+            int count = uuidLocalIDPairs.length;
+            if (count < 1) return null;
+
+            NetworkUtils nm = NetworkUtils.getInstance(getApplicationContext());
+
+            pd.setMax(uuidLocalIDPairs.length + 1);
+
+            Map<Long, UploadData> output = new HashMap<>();
+
+            for (int i=0;i<uuidLocalIDPairs.length;i++) {
+                UUIDLocalIDPair item = uuidLocalIDPairs[i];
+                String server_url = item.getServer();
+                String uuid = item.getUUID();
+                String update_url = String.format("%1$s/%2$s", server_url, uuid);
+
+                HttpURLConnection connection;
+                connection = nm.openConnection(update_url, NetworkUtils.METHOD_PUT);
+                DataOutputStream dos;
+                RequestData rd;
+
+                try {
+                    dos = new DataOutputStream(connection.getOutputStream());
+                    this.publishProgress(new MsgOrInt("Established connection", pd.getProgress()+1));
+                    rd = new RequestData(dos, getContentResolver());
+                    dos.writeBytes(RequestData.hyphens + RequestData.boundary + RequestData.crlf);
+                }
+                catch (IOException e) {
+                    this.publishProgress(new MsgOrInt("Unable to establish connection", 0));
+                    return null;
+                }
+
+                String filemsg = String.format("Replacing %s/%s files", i+1, count);
+                this.publishProgress(new MsgOrInt(filemsg, pd.getProgress()));
+                try {
+                    if (item.getOptData().hasRaw()) {
+                        rd.addRawData(item.getOptData().getRawData());
+                    }
+                    else if (item.getOptData().hasUri()) {
+                        rd.addFile(item.getOptData().getUri());
+                    }
+                    this.publishProgress(new MsgOrInt(null, pd.getProgress()));
+                }
+                catch (IOException e) {
+                    this.publishProgress(new MsgOrInt("Cannot submit "+item, pd.getProgress()));
+                    return null;
+                }
+                try {
+                    output.put(item.getLocalId(), nm.getReplaceResult(connection, server_url, item.getOptPrivate()));
+                }
+                catch (IOException e) {
+                    this.publishProgress(new MsgOrInt("Could not read upload data for "+item, pd.getProgress()));
+                    return null;
+                }
+            }
+
+            return output;
+        }
+
+        @Override
+        protected void onProgressUpdate(MsgOrInt... values) {
+            if (values[0].msg != null) {
+                pd.setMessage(values[0].msg);
+            }
+            pd.setProgress(values[0].progress);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            pd = new ProgressDialog(context);
+            pd.setTitle("Uploading files...");
+            pd.setCancelable(false);
+            pd.setIndeterminate(false);
+            pd.show();
+        }
+
+        @Override
+        protected void onPostExecute(Map<Long, UploadData> longUploadDataMap) {
+            pd.dismiss();
+            replaceFiles(longUploadDataMap);
+            editingIdentifier = null;
+        }
+    }
+
     private class EditButtonListener implements View.OnClickListener {
+
         @Override
         public void onClick(View view) {
             if (actionModeEnabled) {
@@ -356,12 +449,74 @@ public class MainActivity extends ListActivity {
             CursorAdapter cadap = (CursorAdapter)getListView().getAdapter();
             Cursor c = cadap.getCursor();
             c.moveToPosition(i);
-            Toast.makeText(MainActivity.this,
-                    c.getString(c.getColumnIndex(DBHelper.UPLOAD_UUID)),
-                    Toast.LENGTH_SHORT).show();
+
+            String server_url = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
+            String uuid = c.getString(c.getColumnIndex(DBHelper.UPLOAD_UUID));
+            long id = c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID));
+
+            editingIdentifier = new UUIDLocalIDPair(server_url, uuid, id);
+            editingIdentifier.setOptPrivate(c.getInt(c.getColumnIndex(DBHelper.UPLOAD_PRIVATE)) == 1);
+
+            final Context ctxt = MainActivity.this;
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(ctxt);
+            builder.setItems(R.array.edit_options, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    Intent intent;
+                    switch(i) {
+                        case 0:
+                            Toast.makeText(getApplicationContext(),
+                                    "This would be paste hint", Toast.LENGTH_SHORT).show();
+                            break;
+                        case 1:
+                            Intent requestFilesIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                            requestFilesIntent.setType("*/*");
+                            requestFilesIntent.addCategory(Intent.CATEGORY_OPENABLE);
+
+                            intent = Intent.createChooser(requestFilesIntent, getString(R.string.choose_files));
+                            startActivityForResult(intent, OPTIONS_REPLACE_SINGLE);
+                            break;
+                        case 2:
+                            AlertDialog.Builder b2 = new AlertDialog.Builder(ctxt);
+                            final EditText et = new EditText(ctxt);
+                            b2.setTitle("Enter text to upload");
+                            et.setRawInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                            b2.setView(et);
+                            b2.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    String s = et.getText().toString();
+                                    if (!TextUtils.isEmpty(s)) {
+                                        editingIdentifier.setOptData(new UriOrRaw(s.getBytes()));
+                                        new ReplaceFilesTask().execute(editingIdentifier);
+                                    }
+                                    else {
+                                        Toast.makeText(MainActivity.this, R.string.MainActivity_NoBlank_Text, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                            b2.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    editingIdentifier = null;
+                                }
+                            });
+                            b2.create().show();
+                            break;
+                    }
+                }
+            });
+            builder.setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    editingIdentifier = null;
+                }
+            });
+
+            builder.create().show();
         }
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (getIsDark()) {
@@ -708,6 +863,23 @@ public class MainActivity extends ListActivity {
                 }
             }
         }
+        else if (requestCode == OPTIONS_REPLACE_SINGLE) {
+            if (resultCode == RESULT_OK) {
+                Uri single_data = data.getData();
+                editingIdentifier.setOptData(new UriOrRaw(single_data));
+                new ReplaceFilesTask().execute(editingIdentifier);
+            }
+        }
+    }
+
+    private void replaceFiles(Map<Long, UploadData> longUploadDataMap) {
+        for (Map.Entry<Long, UploadData> mapEntry: longUploadDataMap.entrySet()) {
+            UploadData ud = mapEntry.getValue();
+            sqlhelper.replaceEntry(mapEntry.getKey(), ud.getToken(), ud.getSha1sum(), ud.getPreferredHint());
+        }
+
+        UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();
+        adap.changeCursor(sqlhelper.getAllUploads()); //only do this if we really need to
     }
 
     private void addUploads(List<UploadData> uploads) {

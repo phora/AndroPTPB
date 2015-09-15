@@ -272,4 +272,26 @@ public class DBHelper extends SQLiteOpenHelper {
             return sb.toString();
         }
     }
+
+    public void replaceEntry(long id, String token, String sha1sum, String detected_hint) {
+        String whereClause = COLUMN_ID+" = ?";
+        String[] whereArgs = new String[]{String.valueOf(id)};
+
+        ContentValues cv = new ContentValues();
+        cv.put(UPLOAD_TOKEN, token);
+        cv.put(UPLOAD_SHA1, sha1sum);
+        cv.put(UPLOAD_HINT, detected_hint);
+
+        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause,  whereArgs);
+    }
+
+    public void updateHint(long id, String token, String hint) {
+        String whereClause = COLUMN_ID+" = ?";
+        String[] whereArgs = new String[]{String.valueOf(id)};
+
+        ContentValues cv = new ContentValues();
+        cv.put(UPLOAD_HINT, hint);
+
+        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause,  whereArgs);
+    }
 }
