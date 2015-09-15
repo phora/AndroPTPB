@@ -47,7 +47,7 @@
         android:orientation="horizontal" >
 
         <Button
-            android:id="@+id/EditBookmarkActivity.Cancel"
+            android:id="@+id/UploadOptions.Cancel"
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
             android:text="@string/Cancel" />
 
         <Button
-            android:id="@+id/EditBookmarkActivity.OK"
+            android:id="@+id/UploadOptions.OK"
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
