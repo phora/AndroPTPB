@@ -57,7 +57,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private final static String SERVERS_CREATE = "CREATE TABLE " + TABLE_SERVERS +
             " ( " + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + BASE_URL + " TEXT NOT NULL, "
+            + BASE_URL + " TEXT NOT NULL UNIQUE, "
             + SERVER_DEFAULT + " INT)";
 
     private final static String PASTE_HINTS_CREATE = "CREATE TABLE " + TABLE_PASTE_HINTS +
@@ -93,22 +93,71 @@ public class DBHelper extends SQLiteOpenHelper {
         database.insert(TABLE_SERVERS, null, cv);
     }
 
-    private Long getMaxHintGroupID() {
+    private Long getMaxHintGroupID(long server_id) {
         String[] fields = {"max("+PASTE_HINTS_GID+")+1 as max_gid"};
-        Cursor c = getReadableDatabase().query(TABLE_PASTE_HINTS, fields, null, null,
+        String whereClause = "_sid = ?";
+        String[] whereArgs = {String.valueOf(server_id)};
+
+        Cursor c = getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
                 null, null, null, null);
         if (c.getCount() == 0) {
             //nothing's been created
+            c.close();
             return 1L;
         }
         else {
             c.moveToFirst();
-            return c.getLong(c.getColumnIndex("max_gid"));
+            long gid = c.getLong(c.getColumnIndex("max_gid"));
+            c.close();
+            return gid;
+        }
+    }
+
+    public void clearHintGroups(long server_id) {
+        getWritableDatabase().delete(TABLE_PASTE_HINTS, "_sid = ?",
+                new String[]{String.valueOf(server_id)});
+    }
+
+    public boolean hasHighlighter(long server_id, String... hints) {
+        int count = hints.length;
+
+        String[] fields = new String[]{COLUMN_ID};
+        String whereClause = String.format("_sid = ? AND name IN (%s)", makePlaceholders(count));
+
+        String[] whereArgs = new String[count+1];
+        whereArgs[0] = String.valueOf(server_id);
+        System.arraycopy(hints, 0, whereArgs, 1, count);
+
+        Cursor c = getReadableDatabase().query(TABLE_PASTE_HINTS, fields,
+                whereClause, whereArgs, null, null, null, null);
+
+        count = c.getCount();
+        c.close();
+
+        return count == hints.length;
+    }
+
+    public long getServerByURL(String server_url)
+    {
+        String[] fields = new String[]{COLUMN_ID};
+        String whereClause = "_id = ?";
+        String[] whereArgs = new String[]{server_url};
+        Cursor c = getReadableDatabase().query(TABLE_SERVERS, fields, whereClause, whereArgs,
+                null, null, null, null);
+        if (c.getCount() == 0) {
+            c.close();
+            return -1;
+        }
+        else {
+            c.moveToFirst();
+            long id = c.getLong(c.getColumnIndex(COLUMN_ID));
+            c.close();
+            return id;
         }
     }
 
     public void addHintGroup(long server_id, String... aliases) {
-        Long gid = getMaxHintGroupID();
+        Long gid = getMaxHintGroupID(server_id);
         SQLiteDatabase db = getWritableDatabase();
 
         try
@@ -137,7 +186,12 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor getHintGroups(long server_id) {
-        String[] fields = {PASTE_HINTS_NAME, PASTE_HINTS_GID};
+        //SELECT _gid as _id, max(name) as longest_name, (count(name) || ' aliases') as naliases FROM paste_hints GROUP BY _gid
+
+        String max_name = "max("+PASTE_HINTS_NAME+") as longest_name";
+        String naliases = "(count("+PASTE_HINTS_NAME+") || ' aliases') as naliases";
+
+        String[] fields = {COLUMN_ID, max_name, naliases, PASTE_HINTS_SID, PASTE_HINTS_GID};
 
         String whereClause = "_sid = ?";
         String[] whereArgs = {String.valueOf(server_id)};
@@ -146,13 +200,46 @@ public class DBHelper extends SQLiteOpenHelper {
                 PASTE_HINTS_GID, null, null, null);
     }
 
+    public Cursor getHintGroups(long server_id, String name_alike) {
+        String max_name = "max("+PASTE_HINTS_NAME+") as longest_name";
+        String naliases = "(count("+PASTE_HINTS_NAME+") || ' aliases') as naliases";
+
+        String[] fields = {COLUMN_ID, max_name, naliases, PASTE_HINTS_SID, PASTE_HINTS_GID};
+
+        String whereClause = "_sid = ? AND name LIKE ?";
+        String[] whereArgs = {String.valueOf(server_id), String.format("%%%s%%", name_alike)};
+
+        return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
+                PASTE_HINTS_GID, null, null, null);
+    }
+
+    public Cursor getHintGroupChildren(long server_id, long group_id, String name_alike) {
+        String[] fields = {COLUMN_ID, PASTE_HINTS_NAME, PASTE_HINTS_SID, PASTE_HINTS_GID};
+
+        String whereClause = "_sid = ? AND _gid = ? AND name LIKE ?";
+        String[] whereArgs = {String.valueOf(server_id), String.valueOf(group_id), String.format("%%%s%%", name_alike)};
+
+        return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
+                null, null, null, null);
+    }
+
+    public Cursor getHintGroupChildren(long server_id, long group_id) {
+        String[] fields = {COLUMN_ID, PASTE_HINTS_NAME, PASTE_HINTS_SID, PASTE_HINTS_GID};
+
+        String whereClause = "_sid = ? AND _gid = ?";
+        String[] whereArgs = {String.valueOf(server_id), String.valueOf(group_id)};
+
+        return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
+                null, null, null, null);
+    }
+
     public void addServer(String base_url)
     {
         ContentValues cv = new ContentValues();
         cv.put(BASE_URL, base_url);
         cv.put(SERVER_DEFAULT, false);
 
-        getWritableDatabase().insert(TABLE_SERVERS, null, cv);
+        getWritableDatabase().insertOrThrow(TABLE_SERVERS, null, cv);
     }
 
     public long addUpload(String base_url, String token, String vanity, String uuid, String sha1sum, boolean is_private, Long sunset, String upload_hint) {
@@ -191,7 +278,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 " END AS header"; */
         String PRETTY_DATE = "'Expires ' || DATETIME(" + UPLOAD_SUNSET + ", 'unixepoch', 'localtime') AS dt";
         String[] fields = {COLUMN_ID, MAKE_URL_EXPR, MAKE_HVANITY_EXPR, PRETTY_DATE,
-                BASE_URL, UPLOAD_UUID, UPLOAD_PRIVATE};
+                BASE_URL, UPLOAD_UUID, UPLOAD_PRIVATE, UPLOAD_HINT};
         return getReadableDatabase().query(TABLE_UPLOADS, fields, null, null,
                 null, null, COLUMN_ID+" DESC", null);
     }
@@ -219,7 +306,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-        //nothing for now
+        // nothing
     }
 
     public Cursor getAllServers()
@@ -285,7 +372,7 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause,  whereArgs);
     }
 
-    public void updateHint(long id, String token, String hint) {
+    public void updateHint(long id, String hint) {
         String whereClause = COLUMN_ID+" = ?";
         String[] whereArgs = new String[]{String.valueOf(id)};
 

@@ -55,11 +55,12 @@ public class MainActivity extends ListActivity {
     private static final String[] UPLOAD_TYPES = new String[]{"URL", "Raw Text", "File"};
     private Spinner server_spinner;
 
-    static final int PICKING_FOR_UPLOAD = 1;
-    static final int OPTIONS_SET_SINGLE = 2;
-    static final int OPTIONS_SET_SINGLE_RAW_TEXT = 3;
-    static final int OPTIONS_SET_MULTIPLE = 4;
-    static final int OPTIONS_REPLACE_SINGLE = 5;
+    private static final int PICKING_FOR_UPLOAD = 1;
+    private static final int OPTIONS_SET_SINGLE = 2;
+    private static final int OPTIONS_SET_SINGLE_RAW_TEXT = 3;
+    private static final int OPTIONS_SET_MULTIPLE = 4;
+    private static final int OPTIONS_REPLACE_SINGLE = 5;
+    private static final int SET_PASTE_HINT = 6;
 
     private DBHelper sqlhelper;
     private Context context;
@@ -447,12 +448,12 @@ public class MainActivity extends ListActivity {
             }
             Integer i = (Integer)view.getTag();
             CursorAdapter cadap = (CursorAdapter)getListView().getAdapter();
-            Cursor c = cadap.getCursor();
+            final Cursor c = cadap.getCursor();
             c.moveToPosition(i);
 
-            String server_url = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
+            final String server_url = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
             String uuid = c.getString(c.getColumnIndex(DBHelper.UPLOAD_UUID));
-            long id = c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID));
+            final long id = c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID));
 
             editingIdentifier = new UUIDLocalIDPair(server_url, uuid, id);
             editingIdentifier.setOptPrivate(c.getInt(c.getColumnIndex(DBHelper.UPLOAD_PRIVATE)) == 1);
@@ -466,8 +467,13 @@ public class MainActivity extends ListActivity {
                     Intent intent;
                     switch(i) {
                         case 0:
-                            Toast.makeText(getApplicationContext(),
-                                    "This would be paste hint", Toast.LENGTH_SHORT).show();
+                            intent = new Intent(MainActivity.this,
+                                    PasteHintsActivity.class);
+                            String paste_hint = c.getString(c.getColumnIndex(DBHelper.UPLOAD_HINT));
+                            intent.putExtra(PasteHintsActivity.EXTRA_PASTE_HINT, paste_hint);
+                            intent.putExtra(PasteHintsActivity.EXTRA_PASTE_ID, id);
+                            intent.putExtra(PasteHintsActivity.EXTRA_SERVER, server_url);
+                            startActivityForResult(intent, SET_PASTE_HINT);
                             break;
                         case 1:
                             Intent requestFilesIntent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -517,6 +523,7 @@ public class MainActivity extends ListActivity {
             builder.create().show();
         }
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (getIsDark()) {
@@ -690,7 +697,6 @@ public class MainActivity extends ListActivity {
     }
 
     public void requestItems(View view) {
-
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setTitle(R.string.Main_AddItem);
         b.setItems(UPLOAD_TYPES, new DialogInterface.OnClickListener() {
@@ -868,6 +874,16 @@ public class MainActivity extends ListActivity {
                 Uri single_data = data.getData();
                 editingIdentifier.setOptData(new UriOrRaw(single_data));
                 new ReplaceFilesTask().execute(editingIdentifier);
+            }
+        }
+        else if (requestCode == SET_PASTE_HINT) {
+            if (resultCode == RESULT_OK) {
+                long pasteId = data.getLongExtra(PasteHintsActivity.EXTRA_PASTE_ID, -1);
+                String hint = data.getStringExtra(PasteHintsActivity.EXTRA_PASTE_HINT);
+
+                sqlhelper.updateHint(pasteId, hint);
+                UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();
+                adap.changeCursor(sqlhelper.getAllUploads());
             }
         }
     }

@@ -46,6 +46,7 @@
         android:id="@+id/UploadItem.EditButton"
         android:layout_gravity="center_vertical"
         android:src="@android:drawable/ic_menu_edit"
-        android:visibility="invisible" />
+        android:visibility="invisible"
+        android:contentDescription="@string/UploadItem.EditPaste"/>
 
 </LinearLayout>

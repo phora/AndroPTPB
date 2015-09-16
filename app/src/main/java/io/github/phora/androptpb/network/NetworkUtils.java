@@ -17,6 +17,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -39,7 +41,7 @@ public class NetworkUtils {
 
 
     public enum DeleteResult {
-        SUCCESS, NO_CONN, ALREADY_GONE;
+        SUCCESS, NO_CONN, ALREADY_GONE
     }
     public static NetworkUtils getInstance(Context ctxt) {
         if (nm == null) {
@@ -86,6 +88,9 @@ public class NetworkUtils {
                     conn.setDoInput(true);
                     conn.setDoOutput(true);
                 }
+                if (method.equals(METHOD_GET)) {
+                    conn.setDoOutput(false);
+                }
 
                 conn.setRequestProperty("User-Agent", "AndroPTPB");
                 conn.setRequestProperty("Expect", "100-continue");
@@ -103,6 +108,43 @@ public class NetworkUtils {
         }
 
         return null;
+    }
+
+    public List<String[]> getHintGroups(HttpURLConnection conn) throws IOException {
+        List<String[]> output = new LinkedList<>();
+        conn.connect();
+        InputStream stream = conn.getInputStream();
+
+        if (stream != null) {
+            Log.d("NetworkManager", "Got response for uploads, reading now");
+            InputStreamReader isr = new InputStreamReader(stream);
+            BufferedReader br = new BufferedReader(isr);
+            boolean isReading = true;
+            String data;
+
+            do {
+                try {
+                    data = br.readLine();
+                    if (data != null) {
+                        output.add(data.split(" "));
+                    }
+                    else {
+                        isReading = false;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    isReading = false;
+                }
+            } while (isReading);
+
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        Log.d("NetworkManager", "Finished retrieving hints");
+        return output;
     }
 
     public UploadData getReplaceResult(HttpURLConnection conn, String server_path, boolean is_private) throws IOException {

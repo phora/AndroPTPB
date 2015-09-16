@@ -36,4 +36,11 @@
     <string name="OK">OK</string>
     <string name="Cancel">Cancel</string>
     <string name="ContentDescriptionDivider">divider</string>
+    <string name="title_activity_paste_hints">Paste Hint</string>
+    <string name="UploadItem.EditPaste">Edit this paste</string>
+    <string name="server_exists">Already have server</string>
+    <string name="server_exists_msg">Please enter a url that you don\'t have yet.</string>
+    <string name="waiting_for_hints">Waiting for highlighting paste hints…</string>
+    <string name="no_hints">No highlighting hints were found for the paste on its hosting server.
+        Try editing the text entry above to find other highlighting hints.</string>
 </resources>

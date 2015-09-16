@@ -1,7 +1,9 @@
 package io.github.phora.androptpb.activities;
 
+import android.app.AlertDialog;
 import android.app.ListFragment;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteConstraintException;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -60,7 +62,7 @@ public class ServersFragment extends ListFragment {
                 Cursor c = (Cursor) getListView().getItemAtPosition(pos);
 
                 DBHelper sql_helper = DBHelper.getInstance(getActivity().getApplicationContext());
-                sql_helper.deleteServer(c.getLong(c.getColumnIndex(sql_helper.COLUMN_ID)));
+                sql_helper.deleteServer(c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID)));
 
                 serv_adap.swapCursor(sql_helper.getAllServers(false));
                 return true;
@@ -72,7 +74,7 @@ public class ServersFragment extends ListFragment {
                 Cursor currentItem = (Cursor) getListView().getItemAtPosition(pos);
                 DBHelper sql_helper = DBHelper.getInstance(getActivity().getApplicationContext());
 
-                long newId = currentItem.getLong(currentItem.getColumnIndex(sql_helper.COLUMN_ID));
+                long newId = currentItem.getLong(currentItem.getColumnIndex(DBHelper.COLUMN_ID));
                 sql_helper.setDefaultServer(newId, serv_adap.getCurId());
                 serv_adap.setCurId(newId);
                 //serv_adap.setCurPos(pos);
@@ -106,8 +108,15 @@ public class ServersFragment extends ListFragment {
 
         DBHelper sql_helper = DBHelper.getInstance(getActivity().getApplicationContext());
         //add support for changing duration when transfer.sh and similar sites support it
-        sql_helper.addServer(prefix + mUrlEdit.getText().toString());
-
-        serv_adap.swapCursor(sql_helper.getAllServers(false));
+        try {
+            sql_helper.addServer(prefix + mUrlEdit.getText().toString());
+            serv_adap.swapCursor(sql_helper.getAllServers(false));
+        } catch (SQLiteConstraintException e) {
+            AlertDialog.Builder b = new AlertDialog.Builder(getActivity());
+            b.setTitle(getString(R.string.server_exists));
+            b.setMessage(getString(R.string.server_exists_msg));
+            b.setPositiveButton(R.string.OK, null);
+            b.create().show();
+        }
     }
 }
