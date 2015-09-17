@@ -2,7 +2,7 @@
       xmlns:tools="http://schemas.android.com/tools"
       tools:context=".MainActivity">
     <item android:id="@+id/action_prune"
-          android:icon="@android:drawable/ic_menu_delete"
+          android:icon="@drawable/ic_menu_prune"
           android:showAsAction="ifRoom"
           android:title="@string/prune"/>
     <item android:id="@+id/action_preferences"
