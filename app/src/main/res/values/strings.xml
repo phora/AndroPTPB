@@ -43,4 +43,10 @@
     <string name="waiting_for_hints">Waiting for highlighting paste hints…</string>
     <string name="no_hints">No highlighting hints were found for the paste on its hosting server.
         Try editing the text entry above to find other highlighting hints.</string>
+    <string name="action_about">About</string>
+    <string name="site_url">https://github.com/phora/AndroPTPB</string>
+    <string name="email">phora.public@outlook.com</string>
+    <string name="about_desc">Released under the GNU GPLv3 license.</string>
+    <string name="about_ver">Version %1$s</string>
+    <string name="about_app">About %1$s</string>
 </resources>
