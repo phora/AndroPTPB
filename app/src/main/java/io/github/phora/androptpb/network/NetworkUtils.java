@@ -54,11 +54,11 @@ public class NetworkUtils {
         c = context;
     }
 
-    public HttpURLConnection openConnection(String server_path, String method) {
+    public HttpURLConnection openConnection(String serverPath, String method) {
         URL url = null;
 
         try {
-            url = new URL(server_path);
+            url = new URL(serverPath);
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
@@ -77,7 +77,7 @@ public class NetworkUtils {
 
                 String loc = conn.getHeaderField("Location");
                 if (loc != null) {
-                    server_path = loc; //needed?
+                    serverPath = loc; //needed?
                     url = new URL(loc);
                 }
                 conn = (HttpURLConnection) url.openConnection();
@@ -147,7 +147,7 @@ public class NetworkUtils {
         return output;
     }
 
-    public UploadData getReplaceResult(HttpURLConnection conn, String server_path, boolean is_private) throws IOException {
+    public UploadData getReplaceResult(HttpURLConnection conn, String serverPath, boolean isPrivate) throws IOException {
         UploadData output = null;
 
         //should we flush request manually before going in here?
@@ -163,7 +163,7 @@ public class NetworkUtils {
 
             String token = null;
             String sha1 = null;
-            String detected_hint = null;
+            String detectedHint = null;
 
             do {
                 try {
@@ -171,32 +171,32 @@ public class NetworkUtils {
 
                     if (data != null) {
                         if (token == null && (data.startsWith("long: ") || data.startsWith("short: "))) {
-                            if (is_private && data.startsWith("long: ")) {
+                            if (isPrivate && data.startsWith("long: ")) {
                                 token = data.replaceFirst("long: ", "");
                             }
-                            else if (!is_private && data.startsWith("short: ")) {
+                            else if (!isPrivate && data.startsWith("short: ")) {
                                 token = data.replaceFirst("short: ", "");
                             }
                         }
                         else if (sha1 == null && data.startsWith("sha1: ")) {
                             sha1 = data.replaceFirst("sha1: ", "");
                         }
-                        else if (detected_hint == null && data.startsWith("url: ")) {
-                            String trimmed_data = data.replaceFirst("url: ", "");
-                            String full_url = "%1$s/%2$s";
+                        else if (detectedHint == null && data.startsWith("url: ")) {
+                            String trimmedData = data.replaceFirst("url: ", "");
+                            String fullUrl = "%1$s/%2$s";
 
-                            String remove_for_hint = String.format(full_url, server_path, token);
-                            detected_hint = trimmed_data.replaceFirst(Pattern.quote(remove_for_hint), "");
+                            String removeForHint = String.format(fullUrl, serverPath, token);
+                            detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
 
-                            if (TextUtils.isEmpty(detected_hint)) {
-                                detected_hint = null;
+                            if (TextUtils.isEmpty(detectedHint)) {
+                                detectedHint = null;
                             }
                         }
                     }
                     else {
                         if (token != null && sha1 != null) {
-                            output = new UploadData(null, token, null, null, sha1, is_private, null);
-                            output.setPreferredHint(detected_hint);
+                            output = new UploadData(null, token, null, null, sha1, isPrivate, null);
+                            output.setPreferredHint(detectedHint);
                         }
                         isReading = false;
                     }
@@ -237,7 +237,7 @@ public class NetworkUtils {
         }
     }
 
-    public UploadData getUploadResult(String server_path, boolean is_private, HttpURLConnection conn) throws IOException {
+    public UploadData getUploadResult(String serverPath, boolean isPrivate, HttpURLConnection conn) throws IOException {
         UploadData output = null;
 
         //should we flush request manually before going in here?
@@ -255,7 +255,7 @@ public class NetworkUtils {
             String sha1 = null;
             String uuid = null;
             String vanity = null;
-            String detected_hint = null;
+            String detectedHint = null;
             Long sunset = null;
 
             DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSZZZZZ", Locale.ENGLISH);
@@ -266,10 +266,10 @@ public class NetworkUtils {
 
                     if (data != null) {
                         if (token == null && (data.startsWith("long: ") || data.startsWith("short: "))) {
-                            if (is_private && data.startsWith("long: ")) {
+                            if (isPrivate && data.startsWith("long: ")) {
                                 token = data.replaceFirst("long: ", "");
                             }
-                            else if (!is_private && data.startsWith("short: ")) {
+                            else if (!isPrivate && data.startsWith("short: ")) {
                                 token = data.replaceFirst("short: ", "");
                             }
                         }
@@ -292,26 +292,26 @@ public class NetworkUtils {
                                 continue;
                             }
                         }
-                        else if (detected_hint == null && data.startsWith("url: ")) {
-                            String trimmed_data = data.replaceFirst("url: ", "");
-                            String full_url = "%1$s/%2$s";
+                        else if (detectedHint == null && data.startsWith("url: ")) {
+                            String trimmedData = data.replaceFirst("url: ", "");
+                            String fullUrl = "%1$s/%2$s";
                             if (vanity != null) {
-                                String remove_for_hint = String.format(full_url, server_path, vanity);
-                                detected_hint = trimmed_data.replaceFirst(Pattern.quote(remove_for_hint), "");
+                                String removeForHint = String.format(fullUrl, serverPath, vanity);
+                                detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
                             }
                             else {
-                                String remove_for_hint = String.format(full_url, server_path, token);
-                                detected_hint = trimmed_data.replaceFirst(Pattern.quote(remove_for_hint), "");
+                                String removeForHint = String.format(fullUrl, serverPath, token);
+                                detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
                             }
-                            if (TextUtils.isEmpty(detected_hint)) {
-                                detected_hint = null;
+                            if (TextUtils.isEmpty(detectedHint)) {
+                                detectedHint = null;
                             }
                         }
                     }
                     else {
                         if (token != null && sha1 != null && uuid != null) {
-                            output = new UploadData(server_path, token, vanity, uuid, sha1, is_private, sunset);
-                            output.setPreferredHint(detected_hint);
+                            output = new UploadData(serverPath, token, vanity, uuid, sha1, isPrivate, sunset);
+                            output.setPreferredHint(detectedHint);
                         }
                         isReading = false;
                     }
@@ -348,7 +348,7 @@ public class NetworkUtils {
         return false;
     }
 
-    public UploadData getRedirectResult(String server_path, HttpURLConnection conn) throws IOException {
+    public UploadData getRedirectResult(String serverPath, HttpURLConnection conn) throws IOException {
         UploadData output = null;
 
         //should we flush request manually before going in here?
@@ -367,8 +367,8 @@ public class NetworkUtils {
                 try {
                     data = br.readLine();
                     if (data != null) {
-                        token = data.replaceFirst(server_path+"/", "");
-                        output = new UploadData(server_path, token, null, null, null, false, null);
+                        token = data.replaceFirst(serverPath+"/", "");
+                        output = new UploadData(serverPath, token, null, null, null, false, null);
                     }
                     else {
                         isReading = false;

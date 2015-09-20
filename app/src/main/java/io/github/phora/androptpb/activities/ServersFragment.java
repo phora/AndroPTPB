@@ -19,7 +19,7 @@ import io.github.phora.androptpb.adapters.ServerChooserAdapter;
 
 public class ServersFragment extends ListFragment {
 
-    private ServerChooserAdapter serv_adap;
+    private ServerChooserAdapter servAdap;
     private TextView mUrlEdit;
     private Spinner mPrefixSpinner;
     private ImageButton mSubmitServer;
@@ -30,13 +30,13 @@ public class ServersFragment extends ListFragment {
 
         View view = inflater.inflate(R.layout.fragment_server_settings, null);
 
-        serv_adap = new ServerChooserAdapter(getActivity(),
+        servAdap = new ServerChooserAdapter(getActivity(),
                  DBHelper.getInstance(getActivity()).getAllServers(false), false);
-        setListAdapter(serv_adap);
+        setListAdapter(servAdap);
 
-        mUrlEdit = (TextView) view.findViewById(R.id.editText);
+        mUrlEdit = (TextView) view.findViewById(R.id.ServersFragment_UrlBox);
         mPrefixSpinner = (Spinner) view.findViewById(R.id.spinner);
-        mSubmitServer = (ImageButton) view.findViewById(R.id.submitServer);
+        mSubmitServer = (ImageButton) view.findViewById(R.id.ServersFragment_AddServer);
         mSubmitServer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -44,10 +44,10 @@ public class ServersFragment extends ListFragment {
             }
         });
 
-        //Log.d("ServersActivity", "_id " + serv_adap.getCurId() + ", pos " + serv_adap.getCurPos() + ", getCount() " + serv_adap.getCount());
+        //Log.d("ServersActivity", "_id " + servAdap.getCurId() + ", pos " + servAdap.getCurPos() + ", getCount() " + servAdap.getCount());
         //uncomment these to see what I mean
-        //setSelection(serv_adap.getCurPos());
-        //getListView().setItemChecked(serv_adap.getCurPos(), true);
+        //setSelection(servAdap.getCurPos());
+        //getListView().setItemChecked(servAdap.getCurPos(), true);
 
         return view;
     }
@@ -61,10 +61,10 @@ public class ServersFragment extends ListFragment {
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int pos, long id) {
                 Cursor c = (Cursor) getListView().getItemAtPosition(pos);
 
-                DBHelper sql_helper = DBHelper.getInstance(getActivity().getApplicationContext());
-                sql_helper.deleteServer(c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID)));
+                DBHelper sqlhelper = DBHelper.getInstance(getActivity().getApplicationContext());
+                sqlhelper.deleteServer(c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID)));
 
-                serv_adap.swapCursor(sql_helper.getAllServers(false));
+                servAdap.swapCursor(sqlhelper.getAllServers(false));
                 return true;
             }
         });
@@ -72,15 +72,15 @@ public class ServersFragment extends ListFragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long id) {
                 Cursor currentItem = (Cursor) getListView().getItemAtPosition(pos);
-                DBHelper sql_helper = DBHelper.getInstance(getActivity().getApplicationContext());
+                DBHelper sqlhelper = DBHelper.getInstance(getActivity().getApplicationContext());
 
                 long newId = currentItem.getLong(currentItem.getColumnIndex(DBHelper.COLUMN_ID));
-                sql_helper.setDefaultServer(newId, serv_adap.getCurId());
-                serv_adap.setCurId(newId);
-                //serv_adap.setCurPos(pos);
+                sqlhelper.setDefaultServer(newId, servAdap.getCurId());
+                servAdap.setCurId(newId);
+                //servAdap.setCurPos(pos);
 
                 //do we need to swap cursors?
-                //serv_adap.swapCursor(sql_helper.getAllServers(false));
+                //servAdap.swapCursor(sqlhelper.getAllServers(false));
             }
         });
     }
@@ -106,15 +106,15 @@ public class ServersFragment extends ListFragment {
     {
         String prefix = mPrefixSpinner.getSelectedItem().toString();
 
-        DBHelper sql_helper = DBHelper.getInstance(getActivity().getApplicationContext());
+        DBHelper sqlhelper = DBHelper.getInstance(getActivity().getApplicationContext());
         //add support for changing duration when transfer.sh and similar sites support it
         try {
-            sql_helper.addServer(prefix + mUrlEdit.getText().toString());
-            serv_adap.swapCursor(sql_helper.getAllServers(false));
+            sqlhelper.addServer(prefix + mUrlEdit.getText().toString());
+            servAdap.swapCursor(sqlhelper.getAllServers(false));
         } catch (SQLiteConstraintException e) {
             AlertDialog.Builder b = new AlertDialog.Builder(getActivity());
-            b.setTitle(getString(R.string.server_exists));
-            b.setMessage(getString(R.string.server_exists_msg));
+            b.setTitle(getString(R.string.ServersFragment_Exists));
+            b.setMessage(getString(R.string.ServersFragment_Exists_Msg));
             b.setPositiveButton(R.string.OK, null);
             b.create().show();
         }

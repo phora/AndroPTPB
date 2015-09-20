@@ -82,11 +82,11 @@ public class RequestData {
     // http://stackoverflow.com/questions/566462/upload-files-with-httpwebrequest-multipart-form-data
     public void addFile(Uri fpath) throws IOException {
         //setup filename and say that octets follow
-        Cursor file_info = cr.query(fpath, null, null, null, null);
-        file_info.moveToFirst();
-        String fname = file_info.getString(file_info.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-        //long file_length = file_info.getLong(file_info.getColumnIndex(OpenableColumns.SIZE));
-        file_info.close();
+        Cursor fileInfo = cr.query(fpath, null, null, null, null);
+        fileInfo.moveToFirst();
+        String fname = fileInfo.getString(fileInfo.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+        //long file_length = fileInfo.getLong(fileInfo.getColumnIndex(OpenableColumns.SIZE));
+        fileInfo.close();
         String mimetype = cr.getType(fpath);
 
 

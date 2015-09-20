@@ -55,8 +55,7 @@ import io.github.phora.androptpb.network.UploadData;
 
 public class MainActivity extends ListActivity {
 
-    private static final String[] UPLOAD_TYPES = new String[]{"URL", "Raw Text", "File"};
-    private Spinner server_spinner;
+    private Spinner serverSpinner;
 
     private static final int PICKING_FOR_UPLOAD = 1;
     private static final int OPTIONS_SET_SINGLE = 2;
@@ -95,10 +94,10 @@ public class MainActivity extends ListActivity {
 
             for (int i=0;i<uuidLocalIDPairs.length;i++) {
                 UUIDLocalIDPair item = uuidLocalIDPairs[i];
-                String server_url = item.getServer();
+                String serverUrl = item.getServer();
                 String uuid = item.getUUID();
-                String delete_url = String.format("%1$s/%2$s", server_url, uuid);
-                HttpURLConnection connection = nm.openConnection(delete_url,
+                String deleteUrl = String.format("%1$s/%2$s", serverUrl, uuid);
+                HttpURLConnection connection = nm.openConnection(deleteUrl,
                         NetworkUtils.METHOD_DELETE);
 
                 Log.d("DeleteFilesTask", connection.getRequestMethod());
@@ -152,11 +151,11 @@ public class MainActivity extends ListActivity {
 
     private class ShortenURLTask extends AsyncTask<String, MsgOrInt, List<UploadData>>
     {
-        private String server_url;
+        private String serverUrl;
         private ProgressDialog pd;
 
-        public ShortenURLTask(String server_url) {
-            this.server_url = server_url;
+        public ShortenURLTask(String serverUrl) {
+            this.serverUrl = serverUrl;
         }
 
         @Override
@@ -171,7 +170,7 @@ public class MainActivity extends ListActivity {
             LinkedList<UploadData> output = new LinkedList<UploadData>();
 
             for (int i=0;i<items.length;i++) {
-                HttpURLConnection connection = nm.openConnection(this.server_url+"/u",
+                HttpURLConnection connection = nm.openConnection(this.serverUrl +"/u",
                         NetworkUtils.METHOD_POST);
                 DataOutputStream dos;
                 RequestData rd;
@@ -200,7 +199,7 @@ public class MainActivity extends ListActivity {
                     return null;
                 }
                 try {
-                    output.add(nm.getRedirectResult(this.server_url, connection));
+                    output.add(nm.getRedirectResult(this.serverUrl, connection));
                 }
                 catch (IOException e) {
                     this.publishProgress(new MsgOrInt("Could not read redirect for "+items[i], pd.getProgress()));
@@ -240,22 +239,22 @@ public class MainActivity extends ListActivity {
 
     private class UploadFilesTask extends AsyncTask<UriOrRaw, MsgOrInt, List<UploadData>>
     {
-        private String server_url;
+        private String serverUrl;
         private String vanity;
-        private boolean is_private;
+        private boolean isPrivate;
         private Long sunset;
         private ProgressDialog pd;
 
-        public UploadFilesTask(String server_url, boolean is_private, Long sunset) {
-            this.server_url = server_url;
-            this.is_private = is_private;
+        public UploadFilesTask(String serverUrl, boolean isPrivate, Long sunset) {
+            this.serverUrl = serverUrl;
+            this.isPrivate = isPrivate;
             this.sunset = sunset;
         }
 
-        public UploadFilesTask(String server_url, boolean is_private, String vanity, Long sunset) {
+        public UploadFilesTask(String serverUrl, boolean isPrivate, String vanity, Long sunset) {
             this.vanity = vanity;
-            this.is_private = is_private;
-            this.server_url = server_url;
+            this.isPrivate = isPrivate;
+            this.serverUrl = serverUrl;
             this.sunset = sunset;
         }
 
@@ -274,11 +273,11 @@ public class MainActivity extends ListActivity {
                 HttpURLConnection connection;
                 if (items.length == 1 && vanity != null) {
                    String vanurl = "%1$s/~%2$s";
-                   connection = nm.openConnection(String.format(vanurl, this.server_url,
+                   connection = nm.openConnection(String.format(vanurl, this.serverUrl,
                            this.vanity), NetworkUtils.METHOD_POST);
                 }
                 else {
-                   connection = nm.openConnection(this.server_url, NetworkUtils.METHOD_POST);
+                   connection = nm.openConnection(this.serverUrl, NetworkUtils.METHOD_POST);
                 }
                 DataOutputStream dos;
                 RequestData rd;
@@ -297,7 +296,7 @@ public class MainActivity extends ListActivity {
                 String filemsg = String.format("Putting %s/%s files", i+1, items.length);
                 this.publishProgress(new MsgOrInt(filemsg, pd.getProgress()));
                 try {
-                    if (this.is_private) {
+                    if (this.isPrivate) {
                         rd.addPrivacy();
                     }
                     if (this.sunset != null) {
@@ -316,7 +315,7 @@ public class MainActivity extends ListActivity {
                     return null;
                 }
                 try {
-                    output.add(nm.getUploadResult(this.server_url, is_private, connection));
+                    output.add(nm.getUploadResult(this.serverUrl, isPrivate, connection));
                 }
                 catch (IOException e) {
                     this.publishProgress(new MsgOrInt("Could not read upload data for "+items[i], pd.getProgress()));
@@ -370,12 +369,12 @@ public class MainActivity extends ListActivity {
 
             for (int i=0;i<uuidLocalIDPairs.length;i++) {
                 UUIDLocalIDPair item = uuidLocalIDPairs[i];
-                String server_url = item.getServer();
+                String serverUrl = item.getServer();
                 String uuid = item.getUUID();
-                String update_url = String.format("%1$s/%2$s", server_url, uuid);
+                String updateUrl = String.format("%1$s/%2$s", serverUrl, uuid);
 
                 HttpURLConnection connection;
-                connection = nm.openConnection(update_url, NetworkUtils.METHOD_PUT);
+                connection = nm.openConnection(updateUrl, NetworkUtils.METHOD_PUT);
                 DataOutputStream dos;
                 RequestData rd;
 
@@ -406,7 +405,7 @@ public class MainActivity extends ListActivity {
                     return null;
                 }
                 try {
-                    output.put(item.getLocalId(), nm.getReplaceResult(connection, server_url, item.getOptPrivate()));
+                    output.put(item.getLocalId(), nm.getReplaceResult(connection, serverUrl, item.getOptPrivate()));
                 }
                 catch (IOException e) {
                     this.publishProgress(new MsgOrInt("Could not read upload data for "+item, pd.getProgress()));
@@ -454,17 +453,17 @@ public class MainActivity extends ListActivity {
             final Cursor c = cadap.getCursor();
             c.moveToPosition(i);
 
-            final String server_url = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
+            final String serverUrl = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
             String uuid = c.getString(c.getColumnIndex(DBHelper.UPLOAD_UUID));
             final long id = c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID));
 
-            editingIdentifier = new UUIDLocalIDPair(server_url, uuid, id);
+            editingIdentifier = new UUIDLocalIDPair(serverUrl, uuid, id);
             editingIdentifier.setOptPrivate(c.getInt(c.getColumnIndex(DBHelper.UPLOAD_PRIVATE)) == 1);
 
             final Context ctxt = MainActivity.this;
 
             AlertDialog.Builder builder = new AlertDialog.Builder(ctxt);
-            builder.setItems(R.array.edit_options, new DialogInterface.OnClickListener() {
+            builder.setItems(R.array.EditOptions, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     Intent intent;
@@ -472,10 +471,10 @@ public class MainActivity extends ListActivity {
                         case 0:
                             intent = new Intent(MainActivity.this,
                                     PasteHintsActivity.class);
-                            String paste_hint = c.getString(c.getColumnIndex(DBHelper.UPLOAD_HINT));
-                            intent.putExtra(PasteHintsActivity.EXTRA_PASTE_HINT, paste_hint);
+                            String pasteHint = c.getString(c.getColumnIndex(DBHelper.UPLOAD_HINT));
+                            intent.putExtra(PasteHintsActivity.EXTRA_PASTE_HINT, pasteHint);
                             intent.putExtra(PasteHintsActivity.EXTRA_PASTE_ID, id);
-                            intent.putExtra(PasteHintsActivity.EXTRA_SERVER, server_url);
+                            intent.putExtra(PasteHintsActivity.EXTRA_SERVER, serverUrl);
                             startActivityForResult(intent, SET_PASTE_HINT);
                             break;
                         case 1:
@@ -483,7 +482,7 @@ public class MainActivity extends ListActivity {
                             requestFilesIntent.setType("*/*");
                             requestFilesIntent.addCategory(Intent.CATEGORY_OPENABLE);
 
-                            intent = Intent.createChooser(requestFilesIntent, getString(R.string.choose_files));
+                            intent = Intent.createChooser(requestFilesIntent, getString(R.string.MainActivity_ChooseFiles));
                             startActivityForResult(intent, OPTIONS_REPLACE_SINGLE);
                             break;
                         case 2:
@@ -541,7 +540,7 @@ public class MainActivity extends ListActivity {
         context = this;
         //populateActivity();
 
-        server_spinner = (Spinner) findViewById(R.id.server_spinner);
+        serverSpinner = (Spinner) findViewById(R.id.MainActivity_ServerSpinner);
         sqlhelper = DBHelper.getInstance(this);
 
 
@@ -555,19 +554,19 @@ public class MainActivity extends ListActivity {
         getListView().setMultiChoiceModeListener(new MultiChoiceModeListener() {
             @Override
             public void onItemCheckedStateChanged(ActionMode actionMode, int i, long l, boolean b) {
-                int item_count = getListView().getCheckedItemCount();
-                if (item_count == 1) {
-                    actionMode.setSubtitle(getString(R.string.single_item));
+                int itemCount = getListView().getCheckedItemCount();
+                if (itemCount == 1) {
+                    actionMode.setSubtitle(getString(R.string.CABMenu_SingleItem));
                 } else {
-                    actionMode.setSubtitle(String.format(getString(R.string.multiple_items), item_count));
+                    actionMode.setSubtitle(String.format(getString(R.string.CABMenu_MultipleItems), itemCount));
                 }
             }
 
             @Override
             public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
                 MenuInflater mi = getMenuInflater();
-                actionMode.setTitle(getString(R.string.select_items));
-                actionMode.setSubtitle(getString(R.string.single_item));
+                actionMode.setTitle(getString(R.string.CABMenu_SelectItems));
+                actionMode.setSubtitle(getString(R.string.CABMenu_SingleItem));
                 mi.inflate(R.menu.uploads_cab_menu, menu);
                 actionModeEnabled = true;
                 return true;
@@ -590,9 +589,9 @@ public class MainActivity extends ListActivity {
                     case R.id.copy_separate:
                         Log.d("ItemCAB", "Copied things as separate links");
                         s = getBatchSeparate();
-                        clipdata = ClipData.newPlainText(getResources().getString(R.string.message), s);
+                        clipdata = ClipData.newPlainText(getResources().getString(R.string.Copy_Label), s);
                         clipboard.setPrimaryClip(clipdata);
-                        Toast.makeText(context, getString(R.string.toast_copy), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, getString(R.string.Toast_Copy), Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.share_separate:
                         Log.d("ItemCAB", "Sharing as separate");
@@ -600,7 +599,7 @@ public class MainActivity extends ListActivity {
                         intent = new Intent(Intent.ACTION_SEND);
                         intent.setType("text/plain");
                         intent.putExtra(Intent.EXTRA_TEXT, s);
-                        startActivity(Intent.createChooser(intent, getString(R.string.header_share)));
+                        startActivity(Intent.createChooser(intent, getString(R.string.Share_Title)));
                         break;
                     case R.id.delete:
                         Log.d("ItemCAB", "Deleting");
@@ -616,45 +615,45 @@ public class MainActivity extends ListActivity {
             }
         });
 
-        String[] server_data = {"base_url"};
-        int[] server_rsc = {R.id.server_url};
-        SimpleCursorAdapter serv_adap = new SimpleCursorAdapter(this, R.layout.server_item,
-                sqlhelper.getAllServers(), server_data, server_rsc, CursorAdapter.FLAG_AUTO_REQUERY);
-        server_spinner.setAdapter(serv_adap);
+        String[] serverData = {"base_url"};
+        int[] serverRsc = {R.id.ServerItem_Url};
+        SimpleCursorAdapter servAdap = new SimpleCursorAdapter(this, R.layout.server_item,
+                sqlhelper.getAllServers(), serverData, serverRsc, CursorAdapter.FLAG_AUTO_REQUERY);
+        serverSpinner.setAdapter(servAdap);
 
         if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
             ClipData clippy = intent.getClipData();
             Log.d("MainActivity", "Received " + clippy.getItemCount() + " files from another app");
             //shouldn't the share be sent directly to the uploads option?
-            Intent preserve_this = new Intent(this, UploadOptionsActivity.class);
-            preserve_this.setClipData(clippy);
-            startActivityForResult(preserve_this, OPTIONS_SET_MULTIPLE);
+            Intent preserveThis = new Intent(this, UploadOptionsActivity.class);
+            preserveThis.setClipData(clippy);
+            startActivityForResult(preserveThis, OPTIONS_SET_MULTIPLE);
 
         }
         else if (Intent.ACTION_SEND.equals(action) && type != null) {
             String mimetype = intent.getType();
             if (mimetype.equals("text/plain")) {
-                String text_data = intent.getStringExtra(Intent.EXTRA_TEXT);
-                boolean isUrl = (URLUtil.isHttpsUrl(text_data) || URLUtil.isHttpUrl(text_data));
+                String textData = intent.getStringExtra(Intent.EXTRA_TEXT);
+                boolean isUrl = (URLUtil.isHttpsUrl(textData) || URLUtil.isHttpUrl(textData));
                 if (isUrl) {
                     Log.d("MainActivity", "Received redirect from share");
-                    Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
-                    String server_path = selected_server.getString(selected_server.getColumnIndex(DBHelper.BASE_URL));
-                    new ShortenURLTask(server_path).execute(text_data);
+                    Cursor selectedServer = (Cursor) serverSpinner.getSelectedItem();
+                    String serverPath = selectedServer.getString(selectedServer.getColumnIndex(DBHelper.BASE_URL));
+                    new ShortenURLTask(serverPath).execute(textData);
                 } else {
                     Log.d("MainActivity", "Received raw text from share");
-                    Intent preserve_this = new Intent(MainActivity.this,
+                    Intent preserveThis = new Intent(MainActivity.this,
                             UploadOptionsActivity.class);
-                    preserve_this.putExtra(UploadOptionsActivity.EXTRA_RAW_TEXT, text_data);
-                    startActivityForResult(preserve_this, OPTIONS_SET_SINGLE_RAW_TEXT);
+                    preserveThis.putExtra(UploadOptionsActivity.EXTRA_RAW_TEXT, textData);
+                    startActivityForResult(preserveThis, OPTIONS_SET_SINGLE_RAW_TEXT);
                 }
             }
             else if (intent.getClipData() != null) {
                 Log.d("MainActivity", "Received 1 file from share");
-                Intent preserve_this = new Intent(MainActivity.this,
+                Intent preserveThis = new Intent(MainActivity.this,
                         UploadOptionsActivity.class);
-                preserve_this.setData(intent.getClipData().getItemAt(0).getUri());
-                startActivityForResult(preserve_this, OPTIONS_SET_SINGLE);
+                preserveThis.setData(intent.getClipData().getItemAt(0).getUri());
+                startActivityForResult(preserveThis, OPTIONS_SET_SINGLE);
             }
         }
         else {
@@ -670,9 +669,9 @@ public class MainActivity extends ListActivity {
             if (selection.get(i, false)) {
                 Cursor c = (Cursor)getListView().getItemAtPosition(i);
                 String uuid = c.getString(c.getColumnIndex(DBHelper.UPLOAD_UUID));
-                String base_url = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
+                String baseUrl = c.getString(c.getColumnIndex(DBHelper.BASE_URL));
                 long localID = c.getLong(c.getColumnIndex(DBHelper.COLUMN_ID));
-                items.add(new UUIDLocalIDPair(base_url, uuid, localID));
+                items.add(new UUIDLocalIDPair(baseUrl, uuid, localID));
             }
         }
         return items.toArray(new UUIDLocalIDPair[items.size()]);
@@ -701,8 +700,8 @@ public class MainActivity extends ListActivity {
 
     public void requestItems(View view) {
         AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setTitle(R.string.Main_AddItem);
-        b.setItems(UPLOAD_TYPES, new DialogInterface.OnClickListener() {
+        b.setTitle(R.string.MainActivity_AddItem);
+        b.setItems(R.array.UploadTypes, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 Intent intent;
@@ -719,9 +718,9 @@ public class MainActivity extends ListActivity {
                         b2.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
-                                String server_path = selected_server.getString(selected_server.getColumnIndex(DBHelper.BASE_URL));
-                                new ShortenURLTask(server_path).execute(et.getText().toString());
+                                Cursor selectedServer = (Cursor) serverSpinner.getSelectedItem();
+                                String serverPath = selectedServer.getString(selectedServer.getColumnIndex(DBHelper.BASE_URL));
+                                new ShortenURLTask(serverPath).execute(et.getText().toString());
                             }
                         });
                         b2.setNegativeButton("Cancel", null);
@@ -757,7 +756,7 @@ public class MainActivity extends ListActivity {
                         requestFilesIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                         requestFilesIntent.addCategory(Intent.CATEGORY_OPENABLE);
 
-                        intent = Intent.createChooser(requestFilesIntent, getString(R.string.choose_files));
+                        intent = Intent.createChooser(requestFilesIntent, getString(R.string.MainActivity_ChooseFiles));
                         startActivityForResult(intent, PICKING_FOR_UPLOAD);
                         break;
                 }
@@ -771,111 +770,111 @@ public class MainActivity extends ListActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PICKING_FOR_UPLOAD) {
             if (resultCode == RESULT_OK) {
-                Uri single_data = data.getData();
+                Uri singleData = data.getData();
                 ClipData clippy = data.getClipData();
 
                 if (clippy != null) {
-                    Intent preserve_this = new Intent(this, UploadOptionsActivity.class);
-                    preserve_this.setClipData(clippy);
-                    startActivityForResult(preserve_this, OPTIONS_SET_MULTIPLE);
+                    Intent preserveThis = new Intent(this, UploadOptionsActivity.class);
+                    preserveThis.setClipData(clippy);
+                    startActivityForResult(preserveThis, OPTIONS_SET_MULTIPLE);
                 }
-                else if (single_data != null) {
-                    Intent preserve_this = new Intent(this, UploadOptionsActivity.class);
-                    preserve_this.setData(single_data);
-                    startActivityForResult(preserve_this, OPTIONS_SET_SINGLE);
+                else if (singleData != null) {
+                    Intent preserveThis = new Intent(this, UploadOptionsActivity.class);
+                    preserveThis.setData(singleData);
+                    startActivityForResult(preserveThis, OPTIONS_SET_SINGLE);
                 }
                 //do something
             }
         }
         else if (requestCode == OPTIONS_SET_MULTIPLE) {
             if (resultCode == RESULT_OK) {
-                Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
-                String server_path = selected_server.getString(selected_server.getColumnIndex(DBHelper.BASE_URL));
+                Cursor selectedServer = (Cursor) serverSpinner.getSelectedItem();
+                String serverPath = selectedServer.getString(selectedServer.getColumnIndex(DBHelper.BASE_URL));
 
                 ClipData clippy = data.getClipData();
                 Long sunset = null;
-                boolean is_private = false;
+                boolean isPrivate = false;
 
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_SUNSET)) {
                     sunset = data.getLongExtra(UploadOptionsActivity.EXTRA_SUNSET, 0);
                 }
 
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE)) {
-                    is_private = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
+                    isPrivate = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
                 }
 
                 //clipdata holds uris
-                Log.d("MainActivity", String.format(getString(R.string.picked_multiple), clippy.getItemCount()));
-                UriOrRaw[] all_the_files = new UriOrRaw[clippy.getItemCount()];
+                Log.d("MainActivity", String.format(getString(R.string.MainActivity_PickedMultiple), clippy.getItemCount()));
+                UriOrRaw[] allTheFiles = new UriOrRaw[clippy.getItemCount()];
                 for (int i=0;i<clippy.getItemCount();i++) {
-                    all_the_files[i] = new UriOrRaw(clippy.getItemAt(i).getUri());
+                    allTheFiles[i] = new UriOrRaw(clippy.getItemAt(i).getUri());
                 }
-                new UploadFilesTask(server_path, is_private, sunset).execute(all_the_files);
+                new UploadFilesTask(serverPath, isPrivate, sunset).execute(allTheFiles);
             }
         }
         else if (requestCode == OPTIONS_SET_SINGLE) {
             if (resultCode == RESULT_OK) {
-                Uri single_data = data.getData();
+                Uri singleData = data.getData();
 
-                Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
-                String server_path = selected_server.getString(selected_server.getColumnIndex(DBHelper.BASE_URL));
+                Cursor selectedServer = (Cursor) serverSpinner.getSelectedItem();
+                String serverPath = selectedServer.getString(selectedServer.getColumnIndex(DBHelper.BASE_URL));
 
                 Long sunset = null;
                 String vanity = null;
-                boolean is_private = false;
+                boolean isPrivate = false;
 
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_SUNSET)) {
                     sunset = data.getLongExtra(UploadOptionsActivity.EXTRA_SUNSET, 0);
                 }
 
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE)) {
-                    is_private = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
+                    isPrivate = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
                 }
 
-                Log.d("MainActivity", getString(R.string.picked_single));
+                Log.d("MainActivity", getString(R.string.MainActivity_PickedSingle));
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_VANITY)) {
                     vanity = data.getStringExtra(UploadOptionsActivity.EXTRA_VANITY);
-                    new UploadFilesTask(server_path, is_private, vanity, sunset).execute(new UriOrRaw(single_data));
+                    new UploadFilesTask(serverPath, isPrivate, vanity, sunset).execute(new UriOrRaw(singleData));
                 }
                 else {
-                    new UploadFilesTask(server_path, is_private, sunset).execute(new UriOrRaw(single_data));
+                    new UploadFilesTask(serverPath, isPrivate, sunset).execute(new UriOrRaw(singleData));
                 }
-                //Log.d("MainActivity", FileUtils.getPath(getApplicationContext(), single_data));
+                //Log.d("MainActivity", FileUtils.getPath(getApplicationContext(), singleData));
             }
         }
         else if (requestCode == OPTIONS_SET_SINGLE_RAW_TEXT) {
             if (resultCode == RESULT_OK) {
                 String s = data.getStringExtra(UploadOptionsActivity.EXTRA_RAW_TEXT);
 
-                Cursor selected_server = (Cursor)server_spinner.getSelectedItem();
-                String server_path = selected_server.getString(selected_server.getColumnIndex(DBHelper.BASE_URL));
+                Cursor selectedServer = (Cursor) serverSpinner.getSelectedItem();
+                String serverPath = selectedServer.getString(selectedServer.getColumnIndex(DBHelper.BASE_URL));
 
                 Long sunset = null;
                 String vanity = null;
-                boolean is_private = false;
+                boolean isPrivate = false;
 
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_SUNSET)) {
                     sunset = data.getLongExtra(UploadOptionsActivity.EXTRA_SUNSET, 0);
                 }
 
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE)) {
-                    is_private = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
+                    isPrivate = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
                 }
 
-                Log.d("MainActivity", getString(R.string.picked_single));
+                Log.d("MainActivity", getString(R.string.MainActivity_PickedSingle));
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_VANITY)) {
                     vanity = data.getStringExtra(UploadOptionsActivity.EXTRA_VANITY);
-                    new UploadFilesTask(server_path, is_private, vanity, sunset).execute(new UriOrRaw(s.getBytes()));
+                    new UploadFilesTask(serverPath, isPrivate, vanity, sunset).execute(new UriOrRaw(s.getBytes()));
                 }
                 else {
-                    new UploadFilesTask(server_path, is_private, sunset).execute(new UriOrRaw(s.getBytes()));
+                    new UploadFilesTask(serverPath, isPrivate, sunset).execute(new UriOrRaw(s.getBytes()));
                 }
             }
         }
         else if (requestCode == OPTIONS_REPLACE_SINGLE) {
             if (resultCode == RESULT_OK) {
-                Uri single_data = data.getData();
-                editingIdentifier.setOptData(new UriOrRaw(single_data));
+                Uri singleData = data.getData();
+                editingIdentifier.setOptData(new UriOrRaw(singleData));
                 new ReplaceFilesTask().execute(editingIdentifier);
             }
         }
@@ -932,7 +931,7 @@ public class MainActivity extends ListActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_preferences) {
+        if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
@@ -948,9 +947,9 @@ public class MainActivity extends ListActivity {
                 verName = null;
             }
             TextView textView = (TextView)view.findViewById(R.id.AboutDialog_Version);
-            textView.setText(getString(R.string.about_ver, verName));
+            textView.setText(getString(R.string.About_Version, verName));
 
-            builder.setTitle(getString(R.string.about_app, getString(R.string.app_name)));
+            builder.setTitle(getString(R.string.About_App, getString(R.string.AppName)));
             builder.setView(view);
             builder.setNegativeButton(R.string.OK, null);
             builder.create().show();

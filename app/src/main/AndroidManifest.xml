@@ -9,14 +9,14 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="@string/AppName"
         android:theme="@style/AppTheme" >
         <activity
             android:name=".activities.MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/AppName" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
+                <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
@@ -36,7 +36,7 @@
         </activity>
         <activity
             android:name=".activities.SettingsActivity"
-            android:label="@string/title_activity_settings"
+            android:label="@string/Title.Activity.Settings"
             android:parentActivityName=".activities.MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -44,11 +44,11 @@
         </activity>
         <activity
             android:name=".activities.UploadOptionsActivity"
-            android:label="@string/title_activity_upload_options" >
+            android:label="@string/Title.Activity.UploadOptions" >
         </activity>
         <activity
             android:name=".activities.PasteHintsActivity"
-            android:label="@string/title_activity_paste_hints" >
+            android:label="@string/Title.Activity.PasteHints" >
         </activity>
     </application>
 

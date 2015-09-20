@@ -10,11 +10,11 @@ import io.github.phora.androptpb.DBHelper;
  */
 public class PasteHintFilter implements FilterQueryProvider {
 
-    private long server_id;
+    private long serverId;
     private PasteHintsCursorAdapter filteree;
 
-    public PasteHintFilter(long server_id, PasteHintsCursorAdapter filteree) {
-        this.server_id = server_id;
+    public PasteHintFilter(long serverId, PasteHintsCursorAdapter filteree) {
+        this.serverId = serverId;
         this.filteree = filteree;
     }
 
@@ -26,10 +26,10 @@ public class PasteHintFilter implements FilterQueryProvider {
         DBHelper sqlhelper = DBHelper.getInstance(filteree.getContext());
 
         if (charSequence == null) {
-            return sqlhelper.getHintGroups(server_id);
+            return sqlhelper.getHintGroups(serverId);
         }
         else {
-            return sqlhelper.getHintGroups(server_id, filter);
+            return sqlhelper.getHintGroups(serverId, filter);
         }
     }
 }

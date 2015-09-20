@@ -25,20 +25,20 @@
             android:layout_height="fill_parent"
             android:id="@+id/spinner"
             android:layout_weight="0.5"
-            android:entries="@array/server_prefixes"/>
+            android:entries="@array/UrlPrefixes"/>
 
         <EditText
             android:layout_width="0dip"
             android:layout_height="fill_parent"
-            android:id="@+id/editText"
+            android:id="@+id/ServersFragment.UrlBox"
             android:layout_weight="1"
-            android:inputType="none"/>
+            android:inputType="textUri"/>
 
         <ImageButton android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@android:drawable/ic_menu_add"
-                android:contentDescription="@string/add_server"
-                android:id="@+id/submitServer"
+                android:contentDescription="@string/ServersFragment.AddServer"
+                android:id="@+id/ServersFragment.AddServer"
                 android:longClickable="true"/>
     </LinearLayout>
 

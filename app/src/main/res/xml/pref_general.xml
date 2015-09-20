@@ -2,8 +2,8 @@
 
     <CheckBoxPreference
         android:key="isDark"
-        android:title="@string/title_is_dark"
-        android:summary="@string/pref_is_dark"
+        android:title="@string/Pref.Title.IsDark"
+        android:summary="@string/Pref.Desc.IsDark"
         android:defaultValue="false" />
 
 </PreferenceScreen>

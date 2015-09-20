@@ -4,7 +4,7 @@
               android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <CheckedTextView android:id="@+id/server_url"
+    <CheckedTextView android:id="@+id/ServerItem.Url"
         android:layout_height="fill_parent"
         android:layout_width="fill_parent"
         android:textAppearance="?android:textAppearanceLarge"

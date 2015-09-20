@@ -4,31 +4,31 @@ package io.github.phora.androptpb.network;
  * Created by phora on 8/24/15.
  */
 public class UploadData {
-    private String server_url;
+    private String serverUrl;
     private String token;
     private String vanity;
     private String uuid;
     private String sha1sum;
-    private boolean is_private;
+    private boolean isPrivate;
     private Long sunset;
-    private String preferred_hint;
+    private String preferredHint;
 
-    public UploadData(String server_url, String token, String vanity, String uuid, String sha1sum, boolean is_private, Long sunset) {
-        this.server_url = server_url;
+    public UploadData(String serverUrl, String token, String vanity, String uuid, String sha1sum, boolean isPrivate, Long sunset) {
+        this.serverUrl = serverUrl;
         this.token = token;
         this.uuid = uuid;
         this.sha1sum = sha1sum;
-        this.is_private = is_private;
+        this.isPrivate = isPrivate;
         this.sunset = sunset;
         this.vanity = vanity;
     }
 
     public String getServerUrl() {
-        return server_url;
+        return serverUrl;
     }
 
     public void setServerUrl(String server_url) {
-        this.server_url = server_url;
+        this.serverUrl = server_url;
     }
 
     public String getToken() {
@@ -56,11 +56,11 @@ public class UploadData {
     }
 
     public boolean getIsPrivate() {
-        return is_private;
+        return isPrivate;
     }
 
     public void setIsPrivate(boolean is_private) {
-        this.is_private = is_private;
+        this.isPrivate = is_private;
     }
 
     public Long getSunset() {
@@ -80,10 +80,10 @@ public class UploadData {
     }
 
     public String getPreferredHint() {
-        return preferred_hint;
+        return preferredHint;
     }
 
     public void setPreferredHint(String preferred_hint) {
-        this.preferred_hint = preferred_hint;
+        this.preferredHint = preferred_hint;
     }
 }

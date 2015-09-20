@@ -23,15 +23,15 @@ public class PasteHintsCursorAdapter extends SimpleCursorTreeAdapter {
     @Override
     protected Cursor getChildrenCursor(Cursor cursor) {
         DBHelper sqlhelper = DBHelper.getInstance(mContext);
-        long server_id = cursor.getLong(cursor.getColumnIndex(DBHelper.PASTE_HINTS_SID));
-        long group_id = cursor.getLong(cursor.getColumnIndex(DBHelper.PASTE_HINTS_GID));
+        long serverId = cursor.getLong(cursor.getColumnIndex(DBHelper.PASTE_HINTS_SID));
+        long groupId = cursor.getLong(cursor.getColumnIndex(DBHelper.PASTE_HINTS_GID));
 
         Cursor children;
         if (mFilter == null) {
-            children = sqlhelper.getHintGroupChildren(server_id, group_id);
+            children = sqlhelper.getHintGroupChildren(serverId, groupId);
         }
         else {
-            children = sqlhelper.getHintGroupChildren(server_id, group_id, mFilter);
+            children = sqlhelper.getHintGroupChildren(serverId, groupId, mFilter);
         }
         return children;
     }

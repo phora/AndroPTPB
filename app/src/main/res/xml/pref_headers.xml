@@ -4,10 +4,10 @@
 
     <header
         android:fragment="io.github.phora.androptpb.activities.SettingsActivity$GeneralPreferenceFragment"
-        android:title="@string/pref_header_general"/>
+        android:title="@string/PrefHeader.General"/>
 
     <header
         android:fragment="io.github.phora.androptpb.activities.ServersFragment"
-        android:title="@string/title_activity_server_settings"/>
+        android:title="@string/PrefHeader.Servers"/>
 
 </preference-headers>

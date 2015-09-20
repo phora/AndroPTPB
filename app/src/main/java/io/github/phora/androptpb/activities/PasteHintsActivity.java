@@ -1,7 +1,6 @@
 package io.github.phora.androptpb.activities;
 
 import android.app.Activity;
-import android.app.ExpandableListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -126,17 +125,17 @@ public class PasteHintsActivity extends Activity {
         Intent intent = getIntent();
         if (intent != null) {
             server = intent.getStringExtra(EXTRA_SERVER);
-            String paste_hint = intent.getStringExtra(EXTRA_PASTE_HINT);
+            String pasteHint = intent.getStringExtra(EXTRA_PASTE_HINT);
             pasteId = intent.getLongExtra(EXTRA_PASTE_ID, -1);
-            if (paste_hint != null && paste_hint.startsWith("/")) {
+            if (pasteHint != null && pasteHint.startsWith("/")) {
                 mIsHighlight.setChecked(true);
-                mPHintContent.setText(paste_hint.substring(1));
+                mPHintContent.setText(pasteHint.substring(1));
                 mExpandableListView.setEnabled(true);
                 mExpandableListView.setVisibility(View.VISIBLE);
             }
-            else if (paste_hint != null && paste_hint.startsWith(".")) {
+            else if (pasteHint != null && pasteHint.startsWith(".")) {
                 mIsHighlight.setChecked(false);
-                mPHintContent.setText(paste_hint.substring(1));
+                mPHintContent.setText(pasteHint.substring(1));
                 mExpandableListView.setEnabled(false);
                 mExpandableListView.setVisibility(View.GONE);
             }
@@ -171,9 +170,9 @@ public class PasteHintsActivity extends Activity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        /*if (id == R.id.action_settings) {
             return true;
-        }
+        }*/
 
         return super.onOptionsItemSelected(item);
     }
@@ -186,32 +185,32 @@ public class PasteHintsActivity extends Activity {
     public void finishSubmission(View view) {
         Intent output = new Intent();
         String fmt = "%1$s%2$s";
-        String put_here;
+        String putHere;
         String hintString = mPHintContent.getText().toString();
         if (!TextUtils.isEmpty(hintString)) {
             if (mIsHighlight.isChecked()) {
-                put_here = String.format(fmt, "/", hintString);
+                putHere = String.format(fmt, "/", hintString);
             } else {
-                put_here = String.format(fmt, ".", hintString);
+                putHere = String.format(fmt, ".", hintString);
             }
         }
         else {
-            put_here = null;
+            putHere = null;
         }
         output.putExtra(EXTRA_PASTE_ID, pasteId);
-        output.putExtra(EXTRA_PASTE_HINT, put_here);
+        output.putExtra(EXTRA_PASTE_HINT, putHere);
         setResult(RESULT_OK, output);
         finish();
     }
 
     private class PasteHintsRefreshTask extends AsyncTask<Void, Void, Void> {
         String server;
-        long server_id = -1;
+        long serverId = -1;
         DBHelper sqlhelper = DBHelper.getInstance(getApplicationContext());
 
         public PasteHintsRefreshTask(String server) {
             this.server = server;
-            server_id = sqlhelper.getServerByURL(server);
+            serverId = sqlhelper.getServerByURL(server);
         }
 
         @Override
@@ -231,10 +230,10 @@ public class PasteHintsActivity extends Activity {
             long id = sqlhelper.getServerByURL(server);
 
             if (groups != null) {
-                for (String[] hint_group: groups) {
-                    if (!sqlhelper.hasHighlighter(id, hint_group)) {
+                for (String[] hintGroup: groups) {
+                    if (!sqlhelper.hasHighlighter(id, hintGroup)) {
                         Log.d("PasteHintsRefreshTask", "Found new hints, adding them");
-                        sqlhelper.addHintGroup(id, hint_group);
+                        sqlhelper.addHintGroup(id, hintGroup);
                     }
                 }
             }
@@ -244,8 +243,8 @@ public class PasteHintsActivity extends Activity {
 
         @Override
         protected void onPostExecute(Void ignoreme) {
-            pasteHintsCursorAdapter.changeCursor(sqlhelper.getHintGroups(server_id));
-            pasteHintsCursorAdapter.setFilterQueryProvider(new PasteHintFilter(server_id, pasteHintsCursorAdapter));
+            pasteHintsCursorAdapter.changeCursor(sqlhelper.getHintGroups(serverId));
+            pasteHintsCursorAdapter.setFilterQueryProvider(new PasteHintFilter(serverId, pasteHintsCursorAdapter));
 
             View noHighlights = findViewById(R.id.PasteHints_NoHighlights);
             View waiting = findViewById(R.id.PasteHints_Waiting);
