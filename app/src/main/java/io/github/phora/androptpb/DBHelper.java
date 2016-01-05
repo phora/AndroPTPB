@@ -93,6 +93,8 @@ public class DBHelper extends SQLiteOpenHelper {
         database.insert(TABLE_SERVERS, null, cv);
     }
 
+    /* HINT GROUPS */
+
     private Long getMaxHintGroupID(long serverId) {
         String[] fields = {"max("+PASTE_HINTS_GID+")+1 as max_gid"};
         String whereClause = "_sid = ?";
@@ -232,7 +234,9 @@ public class DBHelper extends SQLiteOpenHelper {
         return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
                 null, null, null, null);
     }
+    /* /HINT GROUPS */
 
+    /* SERVERS */
     public void addServer(String base_url)
     {
         ContentValues cv = new ContentValues();
@@ -242,6 +246,54 @@ public class DBHelper extends SQLiteOpenHelper {
         getWritableDatabase().insertOrThrow(TABLE_SERVERS, null, cv);
     }
 
+    public Cursor getAllServers()
+    {
+        return getAllServers(true);
+    }
+
+    public Cursor getAllServers(boolean ordering) {
+        String[] fields = {COLUMN_ID, BASE_URL, SERVER_DEFAULT };
+        String orderBy = null;
+        if (ordering) {
+            orderBy = SERVER_DEFAULT+" DESC";
+        }
+        return getReadableDatabase().query(TABLE_SERVERS, fields, null, null,
+                null, null, orderBy);
+    }
+
+    public void deleteServer(long oldID)
+    {
+        String whereClause = "_id = ?";
+        String[] whereArgs = new String[1];
+        whereArgs[0] = String.valueOf(oldID);
+
+        getWritableDatabase().delete(TABLE_SERVERS, whereClause, whereArgs);
+    }
+
+    public void setDefaultServer(long newID, long oldID)
+    {
+        if (newID == oldID) {
+            return;
+        }
+
+        String whereClause = "_id = ?";
+        ContentValues cv = new ContentValues();
+        String[] whereArgs = new String[1];
+
+        whereArgs[0] = String.valueOf(newID);
+        cv.put(SERVER_DEFAULT, true);
+        getWritableDatabase().update(TABLE_SERVERS, cv, whereClause, whereArgs);
+
+        if (oldID != -1) {
+            cv.clear();
+            cv.put(SERVER_DEFAULT, false);
+            whereArgs[0] = String.valueOf(oldID);
+            getWritableDatabase().update(TABLE_SERVERS, cv, whereClause, whereArgs);
+        }
+    }
+    /* /SERVERS */
+
+    /* UPLOADS */
     public long addUpload(String baseUrl, String token, String vanity, String uuid, String sha1sum, boolean isPrivate, Long sunset, String uploadHint) {
         ContentValues cv = new ContentValues();
         cv.put(BASE_URL, baseUrl);
@@ -280,57 +332,7 @@ public class DBHelper extends SQLiteOpenHelper {
         String[] fields = {COLUMN_ID, MAKE_URL_EXPR, MAKE_HVANITY_EXPR, PRETTY_DATE,
                 BASE_URL, UPLOAD_UUID, UPLOAD_PRIVATE, UPLOAD_HINT};
         return getReadableDatabase().query(TABLE_UPLOADS, fields, null, null,
-                null, null, COLUMN_ID+" DESC", null);
-    }
-
-    public void setDefaultServer(long newID, long oldID)
-    {
-        if (newID == oldID) {
-            return;
-        }
-
-        String whereClause = "_id = ?";
-        ContentValues cv = new ContentValues();
-        String[] whereArgs = new String[1];
-
-        whereArgs[0] = String.valueOf(newID);
-        cv.put(SERVER_DEFAULT, true);
-        getWritableDatabase().update(TABLE_SERVERS, cv, whereClause, whereArgs);
-
-        if (oldID != -1) {
-            cv.clear();
-            cv.put(SERVER_DEFAULT, false);
-            whereArgs[0] = String.valueOf(oldID);
-            getWritableDatabase().update(TABLE_SERVERS, cv, whereClause, whereArgs);
-        }
-    }
-
-    public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-        // nothing
-    }
-
-    public Cursor getAllServers()
-    {
-        return getAllServers(true);
-    }
-
-    public Cursor getAllServers(boolean ordering) {
-        String[] fields = {COLUMN_ID, BASE_URL, SERVER_DEFAULT };
-        String orderBy = null;
-        if (ordering) {
-            orderBy = SERVER_DEFAULT+" DESC";
-        }
-        return getReadableDatabase().query(TABLE_SERVERS, fields, null, null,
-                null, null, orderBy);
-    }
-
-    public void deleteServer(long oldID)
-    {
-        String whereClause = "_id = ?";
-        String[] whereArgs = new String[1];
-        whereArgs[0] = String.valueOf(oldID);
-
-        getWritableDatabase().delete(TABLE_SERVERS, whereClause, whereArgs);
+                null, null, COLUMN_ID + " DESC", null);
     }
 
     public void deleteUploads(List<Long> ids) {
@@ -344,20 +346,6 @@ public class DBHelper extends SQLiteOpenHelper {
         }
 
         getWritableDatabase().delete(TABLE_UPLOADS, whereClause, whereArgs);
-    }
-
-    public static String makePlaceholders(int len) {
-        if (len < 1) {
-            // It will lead to an invalid query anyway ..
-            throw new RuntimeException("No placeholders");
-        } else {
-            StringBuilder sb = new StringBuilder(len * 2 - 1);
-            sb.append("?");
-            for (int i = 1; i < len; i++) {
-                sb.append(",?");
-            }
-            return sb.toString();
-        }
     }
 
     public void replaceEntry(long id, String token, String sha1sum, String detectedHint) {
@@ -379,6 +367,25 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put(UPLOAD_HINT, hint);
 
-        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause,  whereArgs);
+        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause, whereArgs);
+    }
+    /* /UPLOADS */
+
+    public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+        // nothing
+    }
+
+    public static String makePlaceholders(int len) {
+        if (len < 1) {
+            // It will lead to an invalid query anyway ..
+            throw new RuntimeException("No placeholders");
+        } else {
+            StringBuilder sb = new StringBuilder(len * 2 - 1);
+            sb.append("?");
+            for (int i = 1; i < len; i++) {
+                sb.append(",?");
+            }
+            return sb.toString();
+        }
     }
 }
