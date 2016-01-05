@@ -17,7 +17,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private static DBHelper sInstance;
     private final static String DATABASE_NAME = "uploads.db";
-    private final static int DATABASE_VERSION = 1;
+    private final static int DATABASE_VERSION = 2;
 
     public final static String TABLE_UPLOADS = "uploads";
     public final static String COLUMN_ID = "_id";
@@ -44,6 +44,18 @@ public class DBHelper extends SQLiteOpenHelper {
     public final static String PASTE_HINTS_SID = "_sid";
     public final static String PASTE_HINTS_NAME = "name";
 
+    //eg: https://ptpb.pw/someId/HINT/rtf allows showing the paste hint highlighting as an rtf doc
+    public final static String TABLE_FORMATTERS = "formatters";
+    public final static String FORMATTERS_GID = "_gid";
+    public final static String FORMATTERS_SID = "_sid";
+    public final static String FORMATTERS_NAME = "name";
+
+    //eg: https://ptpb.pw/someId/HINT/rtf?style=name
+    // allows showing the paste hint highlighting as an rtf doc with the specified colorscheme
+    public final static String TABLE_STYLES = "styles";
+    public final static String STYLES_SID = "_sid";
+    public final static String STYLES_NAME = "name";
+
     private final static String UPLOADS_CREATE = "CREATE TABLE " + TABLE_UPLOADS +
         " ( " + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
         + BASE_URL + " TEXT NOT NULL, "
@@ -66,6 +78,17 @@ public class DBHelper extends SQLiteOpenHelper {
             + PASTE_HINTS_GID + " INTEGER NOT NULL, "
             + PASTE_HINTS_NAME + " STRING NOT NULL)";
 
+    private final static String FORMATTERS_CREATE = "CREATE TABLE " + TABLE_FORMATTERS +
+            " ( " + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + FORMATTERS_SID  + " INTEGER NOT NULL, "
+            + FORMATTERS_GID  + " INTEGER NOT NULL, "
+            + FORMATTERS_NAME + " TEXT NOT NULL)";
+
+    private final static String STYLES_CREATE = "CREATE TABLE " + TABLE_STYLES +
+            " ( " + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + STYLES_SID  + " INTEGER NOT NULL, "
+            + STYLES_NAME + " TEXT NOT NULL)";
+
     public static synchronized DBHelper getInstance(Context context) {
 
         // Use the application context, which will ensure that you
@@ -85,6 +108,8 @@ public class DBHelper extends SQLiteOpenHelper {
         database.execSQL(UPLOADS_CREATE);
         database.execSQL(SERVERS_CREATE);
         database.execSQL(PASTE_HINTS_CREATE);
+        database.execSQL(FORMATTERS_CREATE);
+        database.execSQL(STYLES_CREATE);
 
         ContentValues cv = new ContentValues();
         cv.put(BASE_URL, "https://ptpb.pw");
@@ -236,6 +261,23 @@ public class DBHelper extends SQLiteOpenHelper {
     }
     /* /HINT GROUPS */
 
+    /* STYLES */
+    public void addStyle(long serverId, String name) {
+        ContentValues cv = new ContentValues();
+        cv.put(STYLES_SID, serverId);
+        cv.put(STYLES_CREATE, name);
+        getWritableDatabase().insertOrThrow(TABLE_STYLES, null, cv);
+    }
+
+    public Cursor getAllStyles(long serverId) {
+        String[] fields = {COLUMN_ID, STYLES_NAME};
+        String whereClause = String.format("%s = ?", STYLES_SID);
+        String[] whereArgs = new String[]{String.valueOf(serverId)};
+        return getReadableDatabase().query(TABLE_STYLES, fields, whereClause, whereArgs,
+                null, null, null, null);
+    }
+    /* /STYLES */
+
     /* SERVERS */
     public void addServer(String base_url)
     {
@@ -372,7 +414,10 @@ public class DBHelper extends SQLiteOpenHelper {
     /* /UPLOADS */
 
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-        // nothing
+        if (oldVersion < 2) {
+            database.execSQL(FORMATTERS_CREATE);
+            database.execSQL(STYLES_CREATE);
+        }
     }
 
     public static String makePlaceholders(int len) {
