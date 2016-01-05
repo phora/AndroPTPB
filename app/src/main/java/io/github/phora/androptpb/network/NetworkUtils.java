@@ -6,6 +6,9 @@ import android.net.NetworkInfo;
 import android.text.TextUtils;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +115,7 @@ public class NetworkUtils {
 
     public List<String[]> getHintGroups(HttpURLConnection conn) throws IOException {
         List<String[]> output = new LinkedList<>();
+        conn.setRequestProperty("Accept", "application/json");
         conn.connect();
         InputStream stream = conn.getInputStream();
 
@@ -120,27 +124,34 @@ public class NetworkUtils {
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
             boolean isReading = true;
-            String data;
+            StringBuilder sb = new StringBuilder();
+            String line = null;
 
-            do {
-                try {
-                    data = br.readLine();
-                    if (data != null) {
-                        output.add(data.split(" "));
-                    }
-                    else {
-                        isReading = false;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    isReading = false;
-                }
-            } while (isReading);
+            while((line = br.readLine()) != null) {
+                sb.append(String.format("%s\n", line));
+            }
 
             try {
                 stream.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+
+            String sbRes = sb.toString();
+
+            try {
+                JSONArray jArr = new JSONArray(sbRes);
+                for (int i = 0; i < jArr.length(); i++) {
+                    JSONArray jSubArr = jArr.getJSONArray(i);
+                    String[] subOutput = new String[jSubArr.length()];
+                    for (int j = 0; j < jSubArr.length(); j++) {
+                        subOutput[j] = jSubArr.getString(j);
+                    }
+                    output.add(subOutput);
+                }
+            } catch (JSONException e) {
+                Log.d("NetworkManager", "Unable to retrieve hints:");
+                Log.d("NetworkManager", sbRes);
             }
         }
         Log.d("NetworkManager", "Finished retrieving hints");
