@@ -120,9 +120,10 @@ public class DBHelper extends SQLiteOpenHelper {
 
     /* HINT GROUPS */
 
+    private final static String phMaxGID = "max("+PASTE_HINTS_GID+")+1 as max_gid";
     private Long getMaxHintGroupID(long serverId) {
-        String[] fields = {"max("+PASTE_HINTS_GID+")+1 as max_gid"};
-        String whereClause = "_sid = ?";
+        String[] fields = {phMaxGID};
+        String whereClause = String.format("%s = ?", PASTE_HINTS_SID);
         String[] whereArgs = {String.valueOf(serverId)};
 
         Cursor c = getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
@@ -149,7 +150,8 @@ public class DBHelper extends SQLiteOpenHelper {
         int count = hints.length;
 
         String[] fields = new String[]{COLUMN_ID};
-        String whereClause = String.format("_sid = ? AND name IN (%s)", makePlaceholders(count));
+        String whereClause = String.format("%s = ? AND name IN (%s)",
+                PASTE_HINTS_SID, makePlaceholders(count));
 
         String[] whereArgs = new String[count+1];
         whereArgs[0] = String.valueOf(serverId);
@@ -167,7 +169,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public long getServerByURL(String serverUrl)
     {
         String[] fields = new String[]{COLUMN_ID};
-        String whereClause = "_id = ?";
+        String whereClause = String.format("%s = ?", COLUMN_ID);
         String[] whereArgs = new String[]{serverUrl};
         Cursor c = getReadableDatabase().query(TABLE_SERVERS, fields, whereClause, whereArgs,
                 null, null, null, null);
@@ -212,15 +214,18 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
+    // used across all variants of getHintGroups
+    private static final String phMaxName  =
+            "max("+PASTE_HINTS_NAME+") as longest_name";
+    private static final String phNAliases =
+            "(count("+PASTE_HINTS_NAME+") || ' aliases') as naliases";
+
     public Cursor getHintGroups(long serverId) {
         //SELECT _gid as _id, max(name) as longest_name, (count(name) || ' aliases') as naliases FROM paste_hints GROUP BY _gid
 
-        String maxName = "max("+PASTE_HINTS_NAME+") as longest_name";
-        String naliases = "(count("+PASTE_HINTS_NAME+") || ' aliases') as naliases";
+        String[] fields = {COLUMN_ID, phMaxName, phNAliases, PASTE_HINTS_SID, PASTE_HINTS_GID};
 
-        String[] fields = {COLUMN_ID, maxName, naliases, PASTE_HINTS_SID, PASTE_HINTS_GID};
-
-        String whereClause = "_sid = ?";
+        String whereClause = String.format("%s = ?", PASTE_HINTS_SID);
         String[] whereArgs = {String.valueOf(serverId)};
 
         return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
@@ -228,12 +233,10 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public Cursor getHintGroups(long serverId, String nameAlike) {
-        String maxName = "max("+PASTE_HINTS_NAME+") as longest_name";
-        String naliases = "(count("+PASTE_HINTS_NAME+") || ' aliases') as naliases";
+        String[] fields = {COLUMN_ID, phMaxName, phNAliases, PASTE_HINTS_SID, PASTE_HINTS_GID};
 
-        String[] fields = {COLUMN_ID, maxName, naliases, PASTE_HINTS_SID, PASTE_HINTS_GID};
-
-        String whereClause = "_sid = ? AND name LIKE ?";
+        String whereClause = String.format("%s = ? AND %s LIKE ?",
+                PASTE_HINTS_SID, PASTE_HINTS_NAME);
         String[] whereArgs = {String.valueOf(serverId), String.format("%%%s%%", nameAlike)};
 
         return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
@@ -243,7 +246,8 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor getHintGroupChildren(long serverId, long groupId, String nameAlike) {
         String[] fields = {COLUMN_ID, PASTE_HINTS_NAME, PASTE_HINTS_SID, PASTE_HINTS_GID};
 
-        String whereClause = "_sid = ? AND _gid = ? AND name LIKE ?";
+        String whereClause = String.format("%s = ? AND %s = ? AND %s LIKE ?",
+                PASTE_HINTS_SID, PASTE_HINTS_GID, PASTE_HINTS_NAME);
         String[] whereArgs = {String.valueOf(serverId), String.valueOf(groupId), String.format("%%%s%%", nameAlike)};
 
         return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
@@ -253,7 +257,8 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor getHintGroupChildren(long serverId, long groupId) {
         String[] fields = {COLUMN_ID, PASTE_HINTS_NAME, PASTE_HINTS_SID, PASTE_HINTS_GID};
 
-        String whereClause = "_sid = ? AND _gid = ?";
+        String whereClause = String.format("%s = ? AND %s = ?",
+                PASTE_HINTS_SID, PASTE_HINTS_GID);
         String[] whereArgs = {String.valueOf(serverId), String.valueOf(groupId)};
 
         return getReadableDatabase().query(TABLE_PASTE_HINTS, fields, whereClause, whereArgs,
@@ -305,7 +310,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public void deleteServer(long oldID)
     {
-        String whereClause = "_id = ?";
+        String whereClause = String.format("%s = ?", COLUMN_ID);
         String[] whereArgs = new String[1];
         whereArgs[0] = String.valueOf(oldID);
 
@@ -318,7 +323,7 @@ public class DBHelper extends SQLiteOpenHelper {
             return;
         }
 
-        String whereClause = "_id = ?";
+        String whereClause = String.format("%s = ?", COLUMN_ID);
         ContentValues cv = new ContentValues();
         String[] whereArgs = new String[1];
 
@@ -381,7 +386,7 @@ public class DBHelper extends SQLiteOpenHelper {
         int count = ids.size();
         if (count == 0)
             return;
-        String whereClause = String.format("_id in (%s)", makePlaceholders(count));
+        String whereClause = String.format("%s in (%s)", COLUMN_ID, makePlaceholders(count));
         String[] whereArgs = new String[count];
         for (int i = 0; i<count; i++) {
             whereArgs[i] = ids.get(i).toString();
@@ -391,7 +396,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void replaceEntry(long id, String token, String sha1sum, String detectedHint) {
-        String whereClause = COLUMN_ID+" = ?";
+        String whereClause = String.format("%s = ?", COLUMN_ID);
         String[] whereArgs = new String[]{String.valueOf(id)};
 
         ContentValues cv = new ContentValues();
@@ -403,7 +408,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void updateHint(long id, String hint) {
-        String whereClause = COLUMN_ID+" = ?";
+        String whereClause = String.format("%s = ?", COLUMN_ID);
         String[] whereArgs = new String[]{String.valueOf(id)};
 
         ContentValues cv = new ContentValues();
