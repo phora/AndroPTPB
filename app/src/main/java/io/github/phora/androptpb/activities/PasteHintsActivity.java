@@ -266,16 +266,14 @@ public class PasteHintsActivity extends Activity {
                 e.printStackTrace();
             }
 
-            long id = sqlhelper.getServerByURL(server);
-
             if (groups != null) {
                 if (purge) {
                     sqlhelper.clearHintGroups(serverId);
                 }
                 for (String[] hintGroup: groups) {
-                    if (!sqlhelper.hasHighlighter(id, hintGroup)) {
+                    if (!sqlhelper.hasHighlighter(serverId, hintGroup)) {
                         Log.d(LOG_TAG, "Found new hints, adding them");
-                        sqlhelper.addHintGroup(id, hintGroup);
+                        sqlhelper.addHintGroup(serverId, hintGroup);
                     }
                 }
             }
