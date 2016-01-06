@@ -8,6 +8,7 @@ import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -97,7 +98,7 @@ public class NetworkUtils {
 
                 conn.setRequestProperty("User-Agent", "AndroPTPB");
                 conn.setRequestProperty("Expect", "100-continue");
-                conn.setRequestProperty("Accept", "*/*");
+                conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + RequestData.boundary);
                 //conn.setRequestProperty("connection", "Keep-Alive");
 
@@ -115,7 +116,6 @@ public class NetworkUtils {
 
     public List<String[]> getHintGroups(HttpURLConnection conn) throws IOException {
         List<String[]> output = new LinkedList<>();
-        conn.setRequestProperty("Accept", "application/json");
         conn.connect();
         InputStream stream = conn.getInputStream();
 
@@ -123,7 +123,7 @@ public class NetworkUtils {
             Log.d("NetworkManager", "Got response for uploads, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
-            boolean isReading = true;
+
             StringBuilder sb = new StringBuilder();
             String line = null;
 
@@ -169,58 +169,55 @@ public class NetworkUtils {
             Log.d("NetworkManager", "Got response for uploads, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
-            boolean isReading = true;
-            String data;
+
+            StringBuilder sb = new StringBuilder();
+            String line = null;
 
             String token = null;
             String sha1 = null;
             String detectedHint = null;
 
-            do {
-                try {
-                    data = br.readLine();
-
-                    if (data != null) {
-                        if (token == null && (data.startsWith("long: ") || data.startsWith("short: "))) {
-                            if (isPrivate && data.startsWith("long: ")) {
-                                token = data.replaceFirst("long: ", "");
-                            }
-                            else if (!isPrivate && data.startsWith("short: ")) {
-                                token = data.replaceFirst("short: ", "");
-                            }
-                        }
-                        else if (sha1 == null && data.startsWith("digest: ")) {
-                            sha1 = data.replaceFirst("digest: ", "");
-                        }
-                        else if (detectedHint == null && data.startsWith("url: ")) {
-                            String trimmedData = data.replaceFirst("url: ", "");
-                            String fullUrl = "%1$s/%2$s";
-
-                            String removeForHint = String.format(fullUrl, serverPath, token);
-                            detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
-
-                            if (TextUtils.isEmpty(detectedHint)) {
-                                detectedHint = null;
-                            }
-                        }
-                    }
-                    else {
-                        if (token != null && sha1 != null) {
-                            output = new UploadData(null, token, null, null, sha1, isPrivate, null);
-                            output.setPreferredHint(detectedHint);
-                        }
-                        isReading = false;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    isReading = false;
-                }
-            } while (isReading);
+            while((line = br.readLine()) != null) {
+                sb.append(String.format("%s\n", line));
+            }
 
             try {
                 stream.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+
+            String sbRes = sb.toString();
+            try {
+                JSONObject jObj = new JSONObject(sbRes);
+
+                if (isPrivate) {
+                    token = jObj.getString("long");
+                }
+                else {
+                    token = jObj.getString("short");
+                }
+
+                sha1 = jObj.getString("digest");
+
+                String trimmedData = jObj.getString("url");
+                String fullUrl = "%1$s/%2$s";
+                   String removeForHint = String.format(fullUrl, serverPath, token);
+                detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
+
+                if (TextUtils.isEmpty(detectedHint)) {
+                    detectedHint = null;
+                }
+
+                if (token != null && sha1 != null) {
+                    output = new UploadData(serverPath, token, null, null, sha1, isPrivate, null);
+                    output.setPreferredHint(detectedHint);
+                }
+            }
+            catch (JSONException e)
+            {
+                Log.d("NetworkManager", "Couldn't parse result from replace");
+                Log.d("NetworkManager", sbRes);
             }
         }
         Log.d("NetworkManager", "Finished uploads");
@@ -259,8 +256,9 @@ public class NetworkUtils {
             Log.d("NetworkManager", "Got response for uploads, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
-            boolean isReading = true;
-            String data;
+
+            StringBuilder sb = new StringBuilder();
+            String line = null;
 
             String token = null;
             String sha1 = null;
@@ -271,72 +269,66 @@ public class NetworkUtils {
 
             DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSZZZZZ", Locale.ENGLISH);
 
-            do {
-                try {
-                    data = br.readLine();
-
-                    if (data != null) {
-
-                        if (token == null && (data.startsWith("long: ") || data.startsWith("short: "))) {
-                            if (isPrivate && data.startsWith("long: ")) {
-                                token = data.replaceFirst("long: ", "");
-                            }
-                            else if (!isPrivate && data.startsWith("short: ")) {
-                                token = data.replaceFirst("short: ", "");
-                            }
-                        }
-                        else if (sha1 == null && data.startsWith("digest: ")) {
-                            sha1 = data.replaceFirst("digest: ", "");
-                        }
-                        else if (uuid == null && data.startsWith("uuid: ")) {
-                            uuid = data.replaceFirst("uuid: ", "");
-                        }
-                        else if (vanity == null && data.startsWith("label: ")) {
-                            vanity = data.replaceFirst("label: ", "");
-                        }
-                        else if (sunset == null && data.startsWith("sunset: ")) {
-                            try {
-                                Date date = fmt.parse(data.replaceFirst("sunset: ", ""));
-                                sunset = date.getTime() / 1000;
-                            }
-                            catch (ParseException e) {
-                                Log.d("NetworkManager", "Can't parse date: "+e.getMessage());
-                                continue;
-                            }
-                        }
-                        else if (detectedHint == null && data.startsWith("url: ")) {
-                            String trimmedData = data.replaceFirst("url: ", "");
-                            String fullUrl = "%1$s/%2$s";
-                            if (vanity != null) {
-                                String removeForHint = String.format(fullUrl, serverPath, vanity);
-                                detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
-                            }
-                            else {
-                                String removeForHint = String.format(fullUrl, serverPath, token);
-                                detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
-                            }
-                            if (TextUtils.isEmpty(detectedHint)) {
-                                detectedHint = null;
-                            }
-                        }
-                    }
-                    else {
-                        if (token != null && sha1 != null && uuid != null) {
-                            output = new UploadData(serverPath, token, vanity, uuid, sha1, isPrivate, sunset);
-                            output.setPreferredHint(detectedHint);
-                        }
-                        isReading = false;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    isReading = false;
-                }
-            } while (isReading);
+            while((line = br.readLine()) != null) {
+                sb.append(String.format("%s\n", line));
+            }
 
             try {
                 stream.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+
+            String sbRes = sb.toString();
+            try {
+                JSONObject jObj = new JSONObject(sbRes);
+
+                if (isPrivate) {
+                    token = jObj.getString("long");
+                }
+                else {
+                    token = jObj.getString("short");
+                }
+
+                sha1 = jObj.getString("digest");
+                uuid = jObj.getString("uuid");
+
+                if (jObj.has("label")) {
+                    vanity = jObj.getString("label");
+                }
+
+                if (jObj.has("sunset")) {
+                    Date date = null;
+                    try {
+                        date = fmt.parse(jObj.getString("sunset"));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                        Log.d("NetworkManager", "Can't parse date: " + e.getMessage());
+                    }
+                    sunset = date.getTime() / 1000;
+                }
+
+                String trimmedData = jObj.getString("url");
+                String fullUrl = "%1$s/%2$s";
+                if (vanity != null) {
+                    String removeForHint = String.format(fullUrl, serverPath, vanity);
+                    detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
+                }
+                else {
+                    String removeForHint = String.format(fullUrl, serverPath, token);
+                    detectedHint = trimmedData.replaceFirst(Pattern.quote(removeForHint), "");
+                }
+                if (TextUtils.isEmpty(detectedHint)) {
+                    detectedHint = null;
+                }
+
+                if (token != null && sha1 != null && uuid != null) {
+                    output = new UploadData(serverPath, token, vanity, uuid, sha1, isPrivate, sunset);
+                    output.setPreferredHint(detectedHint);
+                }
+            } catch (JSONException e) {
+                Log.d("NetworkManager", "Couldn't parse result from upload");
+                Log.d("NetworkManager", sbRes);
             }
         }
         Log.d("NetworkManager", "Finished uploads");
@@ -371,30 +363,31 @@ public class NetworkUtils {
             Log.d("NetworkManager", "Got response for redirect, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
-            boolean isReading = true;
-            String data;
             String token;
 
-            do {
-                try {
-                    data = br.readLine();
-                    if (data != null) {
-                        token = data.replaceFirst(serverPath+"/", "");
-                        output = new UploadData(serverPath, token, null, null, null, false, null);
-                    }
-                    else {
-                        isReading = false;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    isReading = false;
-                }
-            } while (isReading);
+            StringBuilder sb = new StringBuilder();
+            String line = null;
+
+            while((line = br.readLine()) != null) {
+                sb.append(String.format("%s\n", line));
+            }
 
             try {
                 stream.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+
+            String sbRes = sb.toString();
+            try {
+                JSONObject jObj = new JSONObject(sbRes);
+                token = jObj.getString("short");
+                output = new UploadData(serverPath, token, null, null, null, false, null);
+            }
+            catch (JSONException e)
+            {
+                Log.d("NetworkManager", "Couldn't parse result from url shorten");
+                Log.d("NetworkManager", sbRes);
             }
         }
         Log.d("NetworkManager", "Finished submitting redirect");
