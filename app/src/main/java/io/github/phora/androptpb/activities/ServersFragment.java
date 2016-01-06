@@ -19,6 +19,8 @@ import io.github.phora.androptpb.adapters.ServerChooserAdapter;
 
 public class ServersFragment extends ListFragment {
 
+    private final static String LOG_TAG = "ServersFragment";
+
     private ServerChooserAdapter servAdap;
     private TextView mUrlEdit;
     private Spinner mPrefixSpinner;
@@ -44,7 +46,7 @@ public class ServersFragment extends ListFragment {
             }
         });
 
-        //Log.d("ServersActivity", "_id " + servAdap.getCurId() + ", pos " + servAdap.getCurPos() + ", getCount() " + servAdap.getCount());
+        //Log.d(LOG_TAG, "_id " + servAdap.getCurId() + ", pos " + servAdap.getCurPos() + ", getCount() " + servAdap.getCount());
         //uncomment these to see what I mean
         //setSelection(servAdap.getCurPos());
         //getListView().setItemChecked(servAdap.getCurPos(), true);

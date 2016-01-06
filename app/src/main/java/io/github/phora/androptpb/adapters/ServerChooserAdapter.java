@@ -17,6 +17,8 @@ import io.github.phora.androptpb.R;
  * Created by phora on 8/21/15.
  */
 public class ServerChooserAdapter extends ResourceCursorAdapter {
+    private final static String LOG_TAG = "ServerChooserAdapter";
+
     //column field caches
     private static int URL_IDX = -1;
     private static int DEF_IDX = -1;
@@ -47,13 +49,13 @@ public class ServerChooserAdapter extends ResourceCursorAdapter {
         boolean isChecked = (cursor.getInt(DEF_IDX) == 1);
         String base_url = cursor.getString(URL_IDX);
 
-        Log.d("ServerChooserAdapter", "def flag: "+cursor.getInt(DEF_IDX));
+        Log.d(LOG_TAG, "def flag: "+cursor.getInt(DEF_IDX));
 
         checkme.setChecked(isChecked);
         base_url_view.setText(base_url);
 
         if (isChecked) {
-            Log.d("ServerChooserAdapter", base_url + " is the default");
+            Log.d(LOG_TAG, base_url + " is the default");
             curId = cursor.getLong(cursor.getColumnIndex(DBHelper.COLUMN_ID));
         }
     }

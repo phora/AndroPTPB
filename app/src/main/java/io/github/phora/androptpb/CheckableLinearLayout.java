@@ -18,6 +18,8 @@ import android.widget.LinearLayout;
 public class CheckableLinearLayout extends LinearLayout implements Checkable {
     private Checkable _checkbox;
 
+    private static final String LOG_TAG = "CheckableLinearLayout";
+
     public CheckableLinearLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
@@ -33,7 +35,7 @@ public class CheckableLinearLayout extends LinearLayout implements Checkable {
                 _checkbox = (Checkable)v;
             }
         }
-        //Log.d("CheckableLinearLayout", "finished inflating "+(_checkbox != null));
+        //Log.d(LOG_TAG, "finished inflating "+(_checkbox != null));
     }
 
     @Override
@@ -43,7 +45,7 @@ public class CheckableLinearLayout extends LinearLayout implements Checkable {
 
     @Override
     public void setChecked(boolean checked) {
-        Log.d("CheckableLinearLayout", "i was told to "+checked);
+        Log.d(LOG_TAG, "i was told to "+checked);
         if (_checkbox != null) {
             _checkbox.setChecked(checked);
         }

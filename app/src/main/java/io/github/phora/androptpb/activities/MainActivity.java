@@ -57,6 +57,8 @@ public class MainActivity extends ListActivity {
 
     private Spinner serverSpinner;
 
+    private static final String LOG_TAG = "MainActivity";
+
     private static final int PICKING_FOR_UPLOAD = 1;
     private static final int OPTIONS_SET_SINGLE = 2;
     private static final int OPTIONS_SET_SINGLE_RAW_TEXT = 3;
@@ -80,6 +82,7 @@ public class MainActivity extends ListActivity {
     }
 
     private class DeleteFilesTask extends AsyncTask<UUIDLocalIDPair, MsgOrInt, List<Long>> {
+        private static final String LOG_TAG = "DeleteFilesTask";
         ProgressDialog pd;
 
         @Override
@@ -100,7 +103,7 @@ public class MainActivity extends ListActivity {
                 HttpURLConnection connection = nm.openConnection(deleteUrl,
                         NetworkUtils.METHOD_DELETE);
 
-                Log.d("DeleteFilesTask", connection.getRequestMethod());
+                Log.d(LOG_TAG, connection.getRequestMethod());
 
                 String filemsg = String.format("Removing %s/%s files", i+1, count);
                 this.publishProgress(new MsgOrInt(filemsg, pd.getProgress()));
@@ -142,7 +145,7 @@ public class MainActivity extends ListActivity {
         @Override
         protected void onPostExecute(List<Long> ids) {
             pd.dismiss();
-            Log.d("MainActivity", "Got delete history "+(ids != null)+", updating GUI");
+            Log.d(LOG_TAG, "Got delete history "+(ids != null)+", updating GUI");
             if (ids != null) {
                 deleteUploads(ids);
             }
@@ -151,6 +154,7 @@ public class MainActivity extends ListActivity {
 
     private class ShortenURLTask extends AsyncTask<String, MsgOrInt, List<UploadData>>
     {
+        private static final String LOG_TAG = "ShortenURLTask";
         private String serverUrl;
         private ProgressDialog pd;
 
@@ -175,7 +179,7 @@ public class MainActivity extends ListActivity {
                 DataOutputStream dos;
                 RequestData rd;
 
-                Log.d("RedirectTask", connection.getRequestMethod());
+                Log.d(LOG_TAG, connection.getRequestMethod());
 
                 try {
                     dos = new DataOutputStream(connection.getOutputStream());
@@ -230,7 +234,7 @@ public class MainActivity extends ListActivity {
         @Override
         protected void onPostExecute(List<UploadData> uploadDatas) {
             pd.dismiss();
-            Log.d("MainActivity", "Got upload history "+(uploadDatas != null)+", updating GUI");
+            Log.d(LOG_TAG, "Got upload history "+(uploadDatas != null)+", updating GUI");
             if (uploadDatas != null) {
                 addUploads(uploadDatas);
             }
@@ -239,6 +243,7 @@ public class MainActivity extends ListActivity {
 
     private class UploadFilesTask extends AsyncTask<UriOrRaw, MsgOrInt, List<UploadData>>
     {
+        private static final String LOG_TAG = "UploadFilesTask";
         private String serverUrl;
         private String vanity;
         private boolean isPrivate;
@@ -346,7 +351,7 @@ public class MainActivity extends ListActivity {
         @Override
         protected void onPostExecute(List<UploadData> uploadDatas) {
             pd.dismiss();
-            Log.d("MainActivity", "Got upload history "+(uploadDatas != null)+", updating GUI");
+            Log.d(LOG_TAG, "Got upload history "+(uploadDatas != null)+", updating GUI");
             if (uploadDatas != null) {
                 addUploads(uploadDatas);
             }
@@ -354,6 +359,7 @@ public class MainActivity extends ListActivity {
     }
 
     private class ReplaceFilesTask extends AsyncTask<UUIDLocalIDPair, MsgOrInt, Map<Long, UploadData>> {
+        private static final String LOG_TAG = "ReplaceFilesTask";
         ProgressDialog pd;
 
         @Override
@@ -587,14 +593,14 @@ public class MainActivity extends ListActivity {
 
                 switch (menuItem.getItemId()) {
                     case R.id.copy_separate:
-                        Log.d("ItemCAB", "Copied things as separate links");
+                        Log.d(LOG_TAG, "Copied things as separate links");
                         s = getBatchSeparate();
                         clipdata = ClipData.newPlainText(getResources().getString(R.string.Copy_Label), s);
                         clipboard.setPrimaryClip(clipdata);
                         Toast.makeText(context, getString(R.string.Toast_Copy), Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.share_separate:
-                        Log.d("ItemCAB", "Sharing as separate");
+                        Log.d(LOG_TAG, "Sharing as separate");
                         s = getBatchSeparate();
                         intent = new Intent(Intent.ACTION_SEND);
                         intent.setType("text/plain");
@@ -602,7 +608,7 @@ public class MainActivity extends ListActivity {
                         startActivity(Intent.createChooser(intent, getString(R.string.Share_Title)));
                         break;
                     case R.id.delete:
-                        Log.d("ItemCAB", "Deleting");
+                        Log.d(LOG_TAG, "Deleting");
                         UUIDLocalIDPair[] deleteItems = getDeleteCandidates();
                         new DeleteFilesTask().execute(deleteItems);
                 }
@@ -623,7 +629,7 @@ public class MainActivity extends ListActivity {
 
         if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
             ClipData clippy = intent.getClipData();
-            Log.d("MainActivity", "Received " + clippy.getItemCount() + " files from another app");
+            Log.d(LOG_TAG, "Received " + clippy.getItemCount() + " files from another app");
             //shouldn't the share be sent directly to the uploads option?
             Intent preserveThis = new Intent(this, UploadOptionsActivity.class);
             preserveThis.setClipData(clippy);
@@ -636,12 +642,12 @@ public class MainActivity extends ListActivity {
                 String textData = intent.getStringExtra(Intent.EXTRA_TEXT);
                 boolean isUrl = (URLUtil.isHttpsUrl(textData) || URLUtil.isHttpUrl(textData));
                 if (isUrl) {
-                    Log.d("MainActivity", "Received redirect from share");
+                    Log.d(LOG_TAG, "Received redirect from share");
                     Cursor selectedServer = (Cursor) serverSpinner.getSelectedItem();
                     String serverPath = selectedServer.getString(selectedServer.getColumnIndex(DBHelper.BASE_URL));
                     new ShortenURLTask(serverPath).execute(textData);
                 } else {
-                    Log.d("MainActivity", "Received raw text from share");
+                    Log.d(LOG_TAG, "Received raw text from share");
                     Intent preserveThis = new Intent(MainActivity.this,
                             UploadOptionsActivity.class);
                     preserveThis.putExtra(UploadOptionsActivity.EXTRA_RAW_TEXT, textData);
@@ -649,7 +655,7 @@ public class MainActivity extends ListActivity {
                 }
             }
             else if (intent.getClipData() != null) {
-                Log.d("MainActivity", "Received 1 file from share");
+                Log.d(LOG_TAG, "Received 1 file from share");
                 Intent preserveThis = new Intent(MainActivity.this,
                         UploadOptionsActivity.class);
                 preserveThis.setData(intent.getClipData().getItemAt(0).getUri());
@@ -657,7 +663,7 @@ public class MainActivity extends ListActivity {
             }
         }
         else {
-            Log.d("MainActivity", "Doing GUI interaction");
+            Log.d(LOG_TAG, "Doing GUI interaction");
             //other stuff
         }
     }
@@ -804,7 +810,7 @@ public class MainActivity extends ListActivity {
                 }
 
                 //clipdata holds uris
-                Log.d("MainActivity", String.format(getString(R.string.MainActivity_PickedMultiple), clippy.getItemCount()));
+                Log.d(LOG_TAG, String.format(getString(R.string.MainActivity_PickedMultiple), clippy.getItemCount()));
                 UriOrRaw[] allTheFiles = new UriOrRaw[clippy.getItemCount()];
                 for (int i=0;i<clippy.getItemCount();i++) {
                     allTheFiles[i] = new UriOrRaw(clippy.getItemAt(i).getUri());
@@ -831,7 +837,7 @@ public class MainActivity extends ListActivity {
                     isPrivate = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
                 }
 
-                Log.d("MainActivity", getString(R.string.MainActivity_PickedSingle));
+                Log.d(LOG_TAG, getString(R.string.MainActivity_PickedSingle));
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_VANITY)) {
                     vanity = data.getStringExtra(UploadOptionsActivity.EXTRA_VANITY);
                     new UploadFilesTask(serverPath, isPrivate, vanity, sunset).execute(new UriOrRaw(singleData));
@@ -839,7 +845,7 @@ public class MainActivity extends ListActivity {
                 else {
                     new UploadFilesTask(serverPath, isPrivate, sunset).execute(new UriOrRaw(singleData));
                 }
-                //Log.d("MainActivity", FileUtils.getPath(getApplicationContext(), singleData));
+                //Log.d(LOG_TAG, FileUtils.getPath(getApplicationContext(), singleData));
             }
         }
         else if (requestCode == OPTIONS_SET_SINGLE_RAW_TEXT) {
@@ -861,7 +867,7 @@ public class MainActivity extends ListActivity {
                     isPrivate = data.getBooleanExtra(UploadOptionsActivity.EXTRA_IS_PRIVATE, false);
                 }
 
-                Log.d("MainActivity", getString(R.string.MainActivity_PickedSingle));
+                Log.d(LOG_TAG, getString(R.string.MainActivity_PickedSingle));
                 if (data.hasExtra(UploadOptionsActivity.EXTRA_VANITY)) {
                     vanity = data.getStringExtra(UploadOptionsActivity.EXTRA_VANITY);
                     new UploadFilesTask(serverPath, isPrivate, vanity, sunset).execute(new UriOrRaw(s.getBytes()));

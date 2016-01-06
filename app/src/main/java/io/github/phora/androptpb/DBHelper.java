@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class DBHelper extends SQLiteOpenHelper {
 
+    private static final String LOG_TAG = "DBHelper";
+
     private static DBHelper sInstance;
     private final static String DATABASE_NAME = "uploads.db";
     private final static int DATABASE_VERSION = 2;
@@ -206,7 +208,7 @@ public class DBHelper extends SQLiteOpenHelper {
             db.setTransactionSuccessful();
         }
         catch (SQLException e) {
-            Log.d("DBHelper", "Unable to add hint group: "+e.getMessage());
+            Log.d(LOG_TAG, "Unable to add hint group: "+e.getMessage());
         }
         finally
         {

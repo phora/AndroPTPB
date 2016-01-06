@@ -29,6 +29,7 @@ import io.github.phora.androptpb.adapters.PasteHintsCursorAdapter;
 import io.github.phora.androptpb.network.NetworkUtils;
 
 public class PasteHintsActivity extends Activity {
+    private static final String LOG_TAG = "PasteHintsActivity";
 
     public static final String EXTRA_PASTE_HINT = "EXTRA_PASTE_HINT";
     public static final String EXTRA_SERVER = "EXTRA_SERVER";
@@ -208,6 +209,8 @@ public class PasteHintsActivity extends Activity {
     }
 
     private class PasteHintsRefreshTask extends AsyncTask<Void, Void, Void> {
+        private static final String LOG_TAG = "PasteHintsRefreshTask";
+
         String server;
         long serverId = -1;
         DBHelper sqlhelper = DBHelper.getInstance(getApplicationContext());
@@ -231,9 +234,9 @@ public class PasteHintsActivity extends Activity {
             mExpandableListView.setEmptyView(noHighlights);
 
             if (mIsHighlight.isChecked()) {
-                Log.d("PasteHintsRefreshTask", "Showing widgets");
+                Log.d(LOG_TAG, "Showing widgets");
                 if (mExpandableListView.getAdapter().isEmpty()) {
-                    Log.d("PasteHintsRefreshTask", "There's nothing! Show waiting message");
+                    Log.d(LOG_TAG, "There's nothing! Show waiting message");
                     mExpandableListView.setVisibility(View.GONE);
                     mNoHighlights.setVisibility(View.VISIBLE);
                 }
@@ -243,7 +246,7 @@ public class PasteHintsActivity extends Activity {
                 }
 
             } else {
-                Log.d("PasteHintsRefreshTask", "Hiding widgets");
+                Log.d(LOG_TAG, "Hiding widgets");
                 mExpandableListView.setVisibility(View.INVISIBLE);
                 mNoHighlights.setVisibility(View.INVISIBLE);
             }
@@ -271,7 +274,7 @@ public class PasteHintsActivity extends Activity {
                 }
                 for (String[] hintGroup: groups) {
                     if (!sqlhelper.hasHighlighter(id, hintGroup)) {
-                        Log.d("PasteHintsRefreshTask", "Found new hints, adding them");
+                        Log.d(LOG_TAG, "Found new hints, adding them");
                         sqlhelper.addHintGroup(id, hintGroup);
                     }
                 }
@@ -293,9 +296,9 @@ public class PasteHintsActivity extends Activity {
             pasteHintsCursorAdapter.getFilter().filter(mPHintContent.getText().toString());
 
             if (mIsHighlight.isChecked()) {
-                Log.d("PasteHintsRefreshTask", "Showing widgets");
+                Log.d(LOG_TAG, "Showing widgets");
                 if (mExpandableListView.getAdapter().isEmpty()) {
-                    Log.d("PasteHintsRefreshTask", "There's nothing! Show waiting message");
+                    Log.d(LOG_TAG, "There's nothing! Show waiting message");
                     mExpandableListView.setVisibility(View.GONE);
                     mNoHighlights.setVisibility(View.VISIBLE);
                 }
@@ -305,7 +308,7 @@ public class PasteHintsActivity extends Activity {
                 }
 
             } else {
-                Log.d("PasteHintsRefreshTask", "Hiding widgets");
+                Log.d(LOG_TAG, "Hiding widgets");
                 mExpandableListView.setVisibility(View.INVISIBLE);
                 mNoHighlights.setVisibility(View.INVISIBLE);
             }

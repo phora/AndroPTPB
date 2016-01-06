@@ -15,6 +15,8 @@ import java.io.InputStream;
  * Created by phora on 8/27/15.
  */
 public class RequestData {
+    private final static String LOG_TAG = "RequestData";
+
     public final static String crlf = "\r\n";
     public final static String hyphens = "--";
     public final static String boundary = "------------------------8977674a05eb9620";
@@ -55,7 +57,7 @@ public class RequestData {
         if (mimetype == null) {
             mimetype = "application/octet-stream";
         }
-        Log.d("NetworkManager", "Uploading " + fname);
+        Log.d(LOG_TAG, "Uploading " + fname);
 
         if (fname == null) {
             request.writeBytes("Content-Disposition: form-data; name=\"c\"" + crlf);
@@ -71,7 +73,7 @@ public class RequestData {
 
         //write image data
         request.write(bArray);
-        Log.d("NetworkManager", "Got data? " + (bArray != null));
+        Log.d(LOG_TAG, "Got data? " + (bArray != null));
 
         //finish the format http post packet
         request.writeBytes(crlf);

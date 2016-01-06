@@ -33,6 +33,8 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class NetworkUtils {
 
+    private static final String LOG_TAG = "NetworkUtils";
+
     private static NetworkUtils nm;
 
     private Context c;
@@ -107,7 +109,7 @@ public class NetworkUtils {
         }
         catch (IOException e) {
             //some error handling
-            Log.d("NetworkManager", "Failed uploads: " + e.getMessage());
+            Log.d(LOG_TAG, "Failed uploads: " + e.getMessage());
             return null;
         }
 
@@ -120,7 +122,7 @@ public class NetworkUtils {
         InputStream stream = conn.getInputStream();
 
         if (stream != null) {
-            Log.d("NetworkManager", "Got response for formatters, reading now");
+            Log.d(LOG_TAG, "Got response for formatters, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
 
@@ -150,11 +152,11 @@ public class NetworkUtils {
                     output.add(subOutput);
                 }
             } catch (JSONException e) {
-                Log.d("NetworkManager", "Unable to retrieve formatters:");
-                Log.d("NetworkManager", sbRes);
+                Log.d(LOG_TAG, "Unable to retrieve formatters:");
+                Log.d(LOG_TAG, sbRes);
             }
         }
-        Log.d("NetworkManager", "Finished retrieving formatters");
+        Log.d(LOG_TAG, "Finished retrieving formatters");
         return output;
     }
 
@@ -164,7 +166,7 @@ public class NetworkUtils {
         InputStream stream = conn.getInputStream();
 
         if (stream != null) {
-            Log.d("NetworkManager", "Got response for styles, reading now");
+            Log.d(LOG_TAG, "Got response for styles, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
 
@@ -190,11 +192,11 @@ public class NetworkUtils {
                     output.add(s);
                 }
             } catch (JSONException e) {
-                Log.d("NetworkManager", "Unable to retrieve styles:");
-                Log.d("NetworkManager", sbRes);
+                Log.d(LOG_TAG, "Unable to retrieve styles:");
+                Log.d(LOG_TAG, sbRes);
             }
         }
-        Log.d("NetworkManager", "Finished retrieving styles");
+        Log.d(LOG_TAG, "Finished retrieving styles");
         return output;
     }
 
@@ -204,7 +206,7 @@ public class NetworkUtils {
         InputStream stream = conn.getInputStream();
 
         if (stream != null) {
-            Log.d("NetworkManager", "Got response for uploads, reading now");
+            Log.d(LOG_TAG, "Got response for uploads, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
 
@@ -234,11 +236,11 @@ public class NetworkUtils {
                     output.add(subOutput);
                 }
             } catch (JSONException e) {
-                Log.d("NetworkManager", "Unable to retrieve hints:");
-                Log.d("NetworkManager", sbRes);
+                Log.d(LOG_TAG, "Unable to retrieve hints:");
+                Log.d(LOG_TAG, sbRes);
             }
         }
-        Log.d("NetworkManager", "Finished retrieving hints");
+        Log.d(LOG_TAG, "Finished retrieving hints");
         return output;
     }
 
@@ -250,7 +252,7 @@ public class NetworkUtils {
         InputStream stream = conn.getInputStream();
 
         if (stream != null) {
-            Log.d("NetworkManager", "Got response for uploads, reading now");
+            Log.d(LOG_TAG, "Got response for uploads, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
 
@@ -300,11 +302,11 @@ public class NetworkUtils {
             }
             catch (JSONException e)
             {
-                Log.d("NetworkManager", "Couldn't parse result from replace");
-                Log.d("NetworkManager", sbRes);
+                Log.d(LOG_TAG, "Couldn't parse result from replace");
+                Log.d(LOG_TAG, sbRes);
             }
         }
-        Log.d("NetworkManager", "Finished uploads");
+        Log.d(LOG_TAG, "Finished uploads");
         return output;
     }
 
@@ -337,7 +339,7 @@ public class NetworkUtils {
         InputStream stream = conn.getInputStream();
 
         if (stream != null) {
-            Log.d("NetworkManager", "Got response for uploads, reading now");
+            Log.d(LOG_TAG, "Got response for uploads, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
 
@@ -387,7 +389,7 @@ public class NetworkUtils {
                         date = fmt.parse(jObj.getString("sunset"));
                     } catch (ParseException e) {
                         e.printStackTrace();
-                        Log.d("NetworkManager", "Can't parse date: " + e.getMessage());
+                        Log.d(LOG_TAG, "Can't parse date: " + e.getMessage());
                     }
                     sunset = date.getTime() / 1000;
                 }
@@ -411,11 +413,11 @@ public class NetworkUtils {
                     output.setPreferredHint(detectedHint);
                 }
             } catch (JSONException e) {
-                Log.d("NetworkManager", "Couldn't parse result from upload");
-                Log.d("NetworkManager", sbRes);
+                Log.d(LOG_TAG, "Couldn't parse result from upload");
+                Log.d(LOG_TAG, sbRes);
             }
         }
-        Log.d("NetworkManager", "Finished uploads");
+        Log.d(LOG_TAG, "Finished uploads");
         return output;
     }
 
@@ -444,7 +446,7 @@ public class NetworkUtils {
         InputStream stream = conn.getInputStream();
 
         if (stream != null) {
-            Log.d("NetworkManager", "Got response for redirect, reading now");
+            Log.d(LOG_TAG, "Got response for redirect, reading now");
             InputStreamReader isr = new InputStreamReader(stream);
             BufferedReader br = new BufferedReader(isr);
             String token;
@@ -470,11 +472,11 @@ public class NetworkUtils {
             }
             catch (JSONException e)
             {
-                Log.d("NetworkManager", "Couldn't parse result from url shorten");
-                Log.d("NetworkManager", sbRes);
+                Log.d(LOG_TAG, "Couldn't parse result from url shorten");
+                Log.d(LOG_TAG, sbRes);
             }
         }
-        Log.d("NetworkManager", "Finished submitting redirect");
+        Log.d(LOG_TAG, "Finished submitting redirect");
         return output;
     }
 }
