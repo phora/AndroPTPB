@@ -114,6 +114,90 @@ public class NetworkUtils {
         return null;
     }
 
+    public List<String[]> getFormatters(HttpURLConnection conn) throws IOException {
+        List<String[]> output = new LinkedList<>();
+        conn.connect();
+        InputStream stream = conn.getInputStream();
+
+        if (stream != null) {
+            Log.d("NetworkManager", "Got response for formatters, reading now");
+            InputStreamReader isr = new InputStreamReader(stream);
+            BufferedReader br = new BufferedReader(isr);
+
+            StringBuilder sb = new StringBuilder();
+            String line = null;
+
+            while((line = br.readLine()) != null) {
+                sb.append(String.format("%s\n", line));
+            }
+
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            String sbRes = sb.toString();
+
+            try {
+                JSONArray jArr = new JSONArray(sbRes);
+                for (int i = 0; i < jArr.length(); i++) {
+                    JSONArray jSubArr = jArr.getJSONArray(i);
+                    String[] subOutput = new String[jSubArr.length()];
+                    for (int j = 0; j < jSubArr.length(); j++) {
+                        subOutput[j] = jSubArr.getString(j);
+                    }
+                    output.add(subOutput);
+                }
+            } catch (JSONException e) {
+                Log.d("NetworkManager", "Unable to retrieve formatters:");
+                Log.d("NetworkManager", sbRes);
+            }
+        }
+        Log.d("NetworkManager", "Finished retrieving formatters");
+        return output;
+    }
+
+    public List<String> getStyles(HttpURLConnection conn) throws IOException {
+        List<String> output = new LinkedList<>();
+        conn.connect();
+        InputStream stream = conn.getInputStream();
+
+        if (stream != null) {
+            Log.d("NetworkManager", "Got response for styles, reading now");
+            InputStreamReader isr = new InputStreamReader(stream);
+            BufferedReader br = new BufferedReader(isr);
+
+            StringBuilder sb = new StringBuilder();
+            String line = null;
+
+            while((line = br.readLine()) != null) {
+                sb.append(String.format("%s\n", line));
+            }
+
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            String sbRes = sb.toString();
+
+            try {
+                JSONArray jArr = new JSONArray(sbRes);
+                for (int i = 0; i < jArr.length(); i++) {
+                    String s = jArr.getString(i);
+                    output.add(s);
+                }
+            } catch (JSONException e) {
+                Log.d("NetworkManager", "Unable to retrieve styles:");
+                Log.d("NetworkManager", sbRes);
+            }
+        }
+        Log.d("NetworkManager", "Finished retrieving styles");
+        return output;
+    }
+
     public List<String[]> getHintGroups(HttpURLConnection conn) throws IOException {
         List<String[]> output = new LinkedList<>();
         conn.connect();
