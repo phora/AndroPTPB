@@ -189,8 +189,8 @@ public class NetworkUtils {
                                 token = data.replaceFirst("short: ", "");
                             }
                         }
-                        else if (sha1 == null && data.startsWith("sha1: ")) {
-                            sha1 = data.replaceFirst("sha1: ", "");
+                        else if (sha1 == null && data.startsWith("digest: ")) {
+                            sha1 = data.replaceFirst("digest: ", "");
                         }
                         else if (detectedHint == null && data.startsWith("url: ")) {
                             String trimmedData = data.replaceFirst("url: ", "");
@@ -276,6 +276,7 @@ public class NetworkUtils {
                     data = br.readLine();
 
                     if (data != null) {
+
                         if (token == null && (data.startsWith("long: ") || data.startsWith("short: "))) {
                             if (isPrivate && data.startsWith("long: ")) {
                                 token = data.replaceFirst("long: ", "");
@@ -284,8 +285,8 @@ public class NetworkUtils {
                                 token = data.replaceFirst("short: ", "");
                             }
                         }
-                        else if (sha1 == null && data.startsWith("sha1: ")) {
-                            sha1 = data.replaceFirst("sha1: ", "");
+                        else if (sha1 == null && data.startsWith("digest: ")) {
+                            sha1 = data.replaceFirst("digest: ", "");
                         }
                         else if (uuid == null && data.startsWith("uuid: ")) {
                             uuid = data.replaceFirst("uuid: ", "");
