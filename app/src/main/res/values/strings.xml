@@ -50,5 +50,6 @@
     <string name="About.Site">https://github.com/phora/AndroPTPB</string>
     <string name="About.Email">phora.public@outlook.com</string>
     <string name="About.Desc">Released under the GNU GPLv3 license.</string>
+    <string name="Action.Refresh">Refresh</string>
 
 </resources>

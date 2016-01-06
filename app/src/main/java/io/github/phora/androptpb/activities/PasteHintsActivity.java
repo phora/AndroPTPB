@@ -145,7 +145,7 @@ public class PasteHintsActivity extends Activity {
                 mExpandableListView.setVisibility(View.GONE);
             }
 
-            new PasteHintsRefreshTask(server).execute();
+            new PasteHintsRefreshTask(server, false).execute();
         }
     }
 
@@ -173,6 +173,10 @@ public class PasteHintsActivity extends Activity {
         /*if (id == R.id.action_settings) {
             return true;
         }*/
+
+        if (id == R.id.action_purge_refresh) {
+            new PasteHintsRefreshTask(server, true).execute();
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -207,10 +211,42 @@ public class PasteHintsActivity extends Activity {
         String server;
         long serverId = -1;
         DBHelper sqlhelper = DBHelper.getInstance(getApplicationContext());
+        boolean purge;
 
-        public PasteHintsRefreshTask(String server) {
+        public PasteHintsRefreshTask(String server, boolean purgeBeforeRetrieve) {
             this.server = server;
             serverId = sqlhelper.getServerByURL(server);
+            purge = purgeBeforeRetrieve;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            if (!purge)
+                return;
+
+            pasteHintsCursorAdapter.changeCursor(null);
+            View noHighlights = findViewById(R.id.PasteHints_NoHighlights);
+            View waiting = findViewById(R.id.PasteHints_Waiting);
+            waiting.setVisibility(View.GONE);
+            mExpandableListView.setEmptyView(noHighlights);
+
+            if (mIsHighlight.isChecked()) {
+                Log.d("PasteHintsRefreshTask", "Showing widgets");
+                if (mExpandableListView.getAdapter().isEmpty()) {
+                    Log.d("PasteHintsRefreshTask", "There's nothing! Show waiting message");
+                    mExpandableListView.setVisibility(View.GONE);
+                    mNoHighlights.setVisibility(View.VISIBLE);
+                }
+                else {
+                    mExpandableListView.setVisibility(View.VISIBLE);
+                    mNoHighlights.setVisibility(View.GONE);
+                }
+
+            } else {
+                Log.d("PasteHintsRefreshTask", "Hiding widgets");
+                mExpandableListView.setVisibility(View.INVISIBLE);
+                mNoHighlights.setVisibility(View.INVISIBLE);
+            }
         }
 
         @Override
@@ -230,6 +266,9 @@ public class PasteHintsActivity extends Activity {
             long id = sqlhelper.getServerByURL(server);
 
             if (groups != null) {
+                if (purge) {
+                    sqlhelper.clearHintGroups(serverId);
+                }
                 for (String[] hintGroup: groups) {
                     if (!sqlhelper.hasHighlighter(id, hintGroup)) {
                         Log.d("PasteHintsRefreshTask", "Found new hints, adding them");
