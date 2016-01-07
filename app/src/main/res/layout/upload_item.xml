@@ -38,6 +38,27 @@
             android:layout_gravity="center_vertical"/>
 
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:id="@+id/UploadItem.PrefFormat"
+                android:text="" />
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:id="@+id/UploadItem.PrefStyle"
+                android:text="" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <ImageButton

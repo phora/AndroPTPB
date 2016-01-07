@@ -57,6 +57,22 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="io.github.phora.androptpb.activities.MainActivity"/>
         </activity>
+        <activity
+            android:name=".activities.PasteFormatActivity"
+            android:label="@string/Title.Activity.Formatter"
+            android:parentActivityName=".activities.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="io.github.phora.androptpb.activities.MainActivity"/>
+        </activity>
+        <activity
+            android:name=".activities.PasteStyleActivity"
+            android:label="@string/Title.Activity.Styles"
+            android:parentActivityName=".activities.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="io.github.phora.androptpb.activities.MainActivity"/>
+        </activity>
     </application>
 
 </manifest>

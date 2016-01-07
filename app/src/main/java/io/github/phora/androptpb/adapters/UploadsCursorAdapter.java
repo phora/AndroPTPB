@@ -26,6 +26,8 @@ public class UploadsCursorAdapter extends ResourceCursorAdapter {
     private static int COL_EXPIRY = -1;
     private static int COL_UUID = -1;
     private static int COL_PRIVATE = -1;
+    private static int COL_FORMAT = -1;
+    private static int COL_STYLE = -1;
 
     public UploadsCursorAdapter(Context context, Cursor c, boolean autoRequery,
                                 View.OnClickListener editBtnListener) {
@@ -47,6 +49,9 @@ public class UploadsCursorAdapter extends ResourceCursorAdapter {
         TextView expiresDate = (TextView)view.findViewById(R.id.UploadItem_Expires);
         ImageButton editButton = (ImageButton)view.findViewById(R.id.UploadItem_EditButton);
         View privateStripe = view.findViewById(R.id.UploadItem_IsPrivate);
+        
+        TextView prefFormat = (TextView) view.findViewById(R.id.UploadItem_PrefFormat);
+        TextView prefStyle = (TextView) view.findViewById(R.id.UploadItem_PrefStyle);
 
         if (COL_COMPLETE_URL == -1) {
             COL_COMPLETE_URL = cursor.getColumnIndex("complete_url");
@@ -63,7 +68,13 @@ public class UploadsCursorAdapter extends ResourceCursorAdapter {
         if (COL_PRIVATE == -1) {
             COL_PRIVATE = cursor.getColumnIndex(DBHelper.UPLOAD_PRIVATE);
         }
-
+        if (COL_FORMAT == -1) {
+            COL_FORMAT = cursor.getColumnIndex(DBHelper.UPLOAD_FORMAT);
+        }
+        if (COL_STYLE == -1) {
+            COL_STYLE = cursor.getColumnIndex(DBHelper.UPLOAD_STYLE);
+        }
+        
         boolean is_private = cursor.getInt(COL_PRIVATE) == 1;
         if (is_private) {
             privateStripe.setVisibility(View.VISIBLE);
@@ -85,6 +96,8 @@ public class UploadsCursorAdapter extends ResourceCursorAdapter {
         String vanity_url = cursor.getString(COL_VANITY_URL);
         String complete_url = cursor.getString(COL_COMPLETE_URL);
         String expiry = cursor.getString(COL_EXPIRY);
+        String format = cursor.getString(COL_FORMAT);
+        String style = cursor.getString(COL_STYLE);
 
         if (!TextUtils.isEmpty(vanity_url)) {
             completeUrl.setText(vanity_url);
@@ -94,5 +107,7 @@ public class UploadsCursorAdapter extends ResourceCursorAdapter {
         }
 
         expiresDate.setText(expiry);
+        prefFormat.setText(format);
+        prefStyle.setText(style);
     }
 }

@@ -8,6 +8,14 @@
           android:icon="@drawable/ic_menu_share"
           android:showAsAction="ifRoom"
           android:title="@string/share" />
+    <item android:id="@+id/copy_w_style"
+          android:icon="@drawable/ic_menu_copy"
+          android:showAsAction="never"
+          android:title="@string/copy_w_style" />
+    <item android:id="@+id/share_w_style"
+          android:icon="@drawable/ic_menu_share"
+          android:showAsAction="never"
+          android:title="@string/share_w_style" />
     <item android:id="@+id/delete"
           android:icon="@drawable/ic_menu_delete"
           android:showAsAction="ifRoom"

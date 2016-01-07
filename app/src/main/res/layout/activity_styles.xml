@@ -1,45 +1,42 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                tools:context="io.github.phora.androptpb.activities.PasteHintsActivity">
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activities.PasteStyleActivity">
 
     <Switch
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/PasteHints.IsHighlight"
-        android:hint="@string/PasteHints.IsHighlight"/>
+        android:id="@+id/PasteStyle.IsDefault"
+        android:hint="@string/Styles.IsDefault"/>
 
-    <EditText android:layout_height="wrap_content"
-              android:layout_width="fill_parent"
-              android:id="@+id/PasteHints.Content"
-              android:hint="@string/PasteHints.Content"/>
-
-
-    <ExpandableListView
+    <ListView
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:visibility="gone"
-        android:id="@+id/PasteHints.Highlights"/>
+        android:choiceMode="singleChoice"
+        android:id="@+id/PasteStyle.Styles"/>
 
     <TextView
-        android:text="@string/PasteHints.Waiting"
+        android:text="@string/Styles.Waiting"
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
-        android:id="@+id/PasteHints.Waiting"
+        android:id="@+id/PasteStyle.Waiting"
         android:visibility="gone"
         android:gravity="center"/>
 
     <TextView
-        android:text="@string/PasteHints.NoHints"
+        android:text="@string/Styles.NoHints"
         android:layout_width="fill_parent"
         android:layout_height="0dip"
         android:layout_weight="1"
         android:visibility="gone"
-        android:id="@+id/PasteHints.NoHighlights"
+        android:id="@+id/PasteStyle.NoStyles"
         android:gravity="center"/>
 
     <ImageView
@@ -57,7 +54,7 @@
         android:orientation="horizontal" >
 
         <Button
-            android:id="@+id/PasteHints.Cancel"
+            android:id="@+id/Styles.Cancel"
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
@@ -68,7 +65,7 @@
             android:text="@string/Cancel" />
 
         <Button
-            android:id="@+id/PasteHints.OK"
+            android:id="@+id/Styles.OK"
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
@@ -78,5 +75,5 @@
             android:onClick="finishSubmission"
             android:text="@string/OK" />
     </LinearLayout>
-
+    
 </LinearLayout>

@@ -35,6 +35,8 @@ public class DBHelper extends SQLiteOpenHelper {
     //eg: https://ptpb.pw/Ejaw.jpg OR https://ptpb.pw/Ejaw/java
     public final static String UPLOAD_SUNSET = "sunset";
     public final static String UPLOAD_PRIVATE = "is_private";
+    public final static String UPLOAD_FORMAT = "format";
+    public final static String UPLOAD_STYLE = "style";
 
     /* SERVER TABLE EXCLUSIVE FIELDS */
     public final static String TABLE_SERVERS = "servers";
@@ -67,7 +69,9 @@ public class DBHelper extends SQLiteOpenHelper {
         + UPLOAD_SHA1 + " TEXT, "
         + UPLOAD_HINT + " TEXT, "
         + UPLOAD_SUNSET + " INT, "
-        + UPLOAD_PRIVATE + " INT)";
+        + UPLOAD_PRIVATE + " INT, "
+        + UPLOAD_FORMAT + " TEXT, "
+        + UPLOAD_STYLE + " TEXT)";
 
     private final static String SERVERS_CREATE = "CREATE TABLE " + TABLE_SERVERS +
             " ( " + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -144,7 +148,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void clearHintGroups(long serverId) {
-        getWritableDatabase().delete(TABLE_PASTE_HINTS, "_sid = ?",
+        String whereClause = String.format("%s = ?", PASTE_HINTS_SID);
+        getWritableDatabase().delete(TABLE_PASTE_HINTS, whereClause,
                 new String[]{String.valueOf(serverId)});
     }
 
@@ -268,11 +273,113 @@ public class DBHelper extends SQLiteOpenHelper {
     }
     /* /HINT GROUPS */
 
+    /* FORMATTERS */
+
+    private final static String fmtMaxGID = "max("+FORMATTERS_GID+")+1 as max_gid";
+    private Long getMaxFormatterGroupID(long serverId) {
+        String[] fields = {fmtMaxGID};
+        String whereClause = String.format("%s = ?", FORMATTERS_SID);
+        String[] whereArgs = {String.valueOf(serverId)};
+
+        Cursor c = getReadableDatabase().query(TABLE_FORMATTERS, fields, whereClause, whereArgs,
+                null, null, null, null);
+        if (c.getCount() == 0) {
+            //nothing's been created
+            c.close();
+            return 1L;
+        }
+        else {
+            c.moveToFirst();
+            long gid = c.getLong(c.getColumnIndex("max_gid"));
+            c.close();
+            return gid;
+        }
+    }
+
+    public boolean hasFormatter(long serverId, String... formats) {
+        int count = formats.length;
+
+        String[] fields = new String[]{COLUMN_ID};
+        String whereClause = String.format("%s = ? AND name IN (%s)",
+                FORMATTERS_SID, makePlaceholders(count));
+
+        String[] whereArgs = new String[count+1];
+        whereArgs[0] = String.valueOf(serverId);
+        System.arraycopy(formats, 0, whereArgs, 1, count);
+
+        Cursor c = getReadableDatabase().query(TABLE_FORMATTERS, fields,
+                whereClause, whereArgs, null, null, null, null);
+
+        count = c.getCount();
+        c.close();
+
+        return count == formats.length;
+    }
+    
+    public void addFormatterGroup(long serverId, String... aliases) {
+        Long gid = getMaxFormatterGroupID(serverId);
+        SQLiteDatabase db = getWritableDatabase();
+
+        try
+        {
+            db.beginTransaction();
+            ContentValues cv = new ContentValues();
+            cv.put(FORMATTERS_GID, gid);
+            cv.put(FORMATTERS_SID, serverId);
+
+            for (String alias: aliases)
+            {
+                cv.remove(FORMATTERS_NAME);
+                cv.put(FORMATTERS_NAME, alias);
+                db.insert(TABLE_FORMATTERS, null, cv);
+            }
+
+            db.setTransactionSuccessful();
+        }
+        catch (SQLException e) {
+            Log.d(LOG_TAG, "Unable to add format group: "+e.getMessage());
+        }
+        finally
+        {
+            db.endTransaction();
+        }
+    }
+
+    // used across all variants of getHintGroups
+    private static final String fmtMaxName  =
+            "max("+FORMATTERS_NAME+") as longest_name";
+    private static final String fmtNAliases =
+            "(count("+FORMATTERS_NAME+") || ' aliases') as naliases";
+
+    public Cursor getAllFormatters(long serverId) {
+        String[] fields = {COLUMN_ID, FORMATTERS_SID, FORMATTERS_GID, fmtMaxName, fmtNAliases};
+        String whereClause = String.format("%s = ?", FORMATTERS_SID);
+        String[] whereArgs = new String[]{String.valueOf(serverId)};
+        return getReadableDatabase().query(TABLE_FORMATTERS, fields, whereClause, whereArgs,
+                FORMATTERS_GID, null, null, null);
+    }
+
+    public Cursor getFormatterChildren(long serverId, long groupId) {
+        String[] fields = {COLUMN_ID, FORMATTERS_SID, FORMATTERS_GID, FORMATTERS_NAME};
+        String whereClause = String.format("%s = ? AND %s = ?", FORMATTERS_SID, FORMATTERS_GID);
+        String[] whereArgs = new String[]{String.valueOf(serverId), String.valueOf(groupId)};
+        return getReadableDatabase().query(TABLE_FORMATTERS, fields, whereClause, whereArgs,
+                null, null, null, null);
+    }
+
+    public void clearFormatterGroups(long serverId) {
+        String whereClause = String.format("%s = ?", STYLES_SID);
+        getWritableDatabase().delete(TABLE_FORMATTERS, whereClause,
+                new String[]{String.valueOf(serverId)});
+    }
+
+    /* /FORMATTERS */
+
     /* STYLES */
     public void addStyle(long serverId, String name) {
         ContentValues cv = new ContentValues();
         cv.put(STYLES_SID, serverId);
-        cv.put(STYLES_CREATE, name);
+        cv.put(STYLES_NAME, name);
         getWritableDatabase().insertOrThrow(TABLE_STYLES, null, cv);
     }
 
@@ -282,6 +389,12 @@ public class DBHelper extends SQLiteOpenHelper {
         String[] whereArgs = new String[]{String.valueOf(serverId)};
         return getReadableDatabase().query(TABLE_STYLES, fields, whereClause, whereArgs,
                 null, null, null, null);
+    }
+
+    public void clearStyles(long serverId) {
+        String whereClause = String.format("%s = ?", STYLES_SID);
+        getWritableDatabase().delete(TABLE_STYLES, whereClause,
+                new String[]{String.valueOf(serverId)});
     }
     /* /STYLES */
 
@@ -379,7 +492,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 " END AS header"; */
         String PRETTY_DATE = "'Expires ' || DATETIME(" + UPLOAD_SUNSET + ", 'unixepoch', 'localtime') AS dt";
         String[] fields = {COLUMN_ID, MAKE_URL_EXPR, MAKE_HVANITY_EXPR, PRETTY_DATE,
-                BASE_URL, UPLOAD_UUID, UPLOAD_PRIVATE, UPLOAD_HINT};
+                BASE_URL, UPLOAD_UUID, UPLOAD_PRIVATE, UPLOAD_HINT, UPLOAD_FORMAT, UPLOAD_STYLE};
         return getReadableDatabase().query(TABLE_UPLOADS, fields, null, null,
                 null, null, COLUMN_ID + " DESC", null);
     }
@@ -406,7 +519,7 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put(UPLOAD_SHA1, sha1sum);
         cv.put(UPLOAD_HINT, detectedHint);
 
-        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause,  whereArgs);
+        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause, whereArgs);
     }
 
     public void updateHint(long id, String hint) {
@@ -418,12 +531,40 @@ public class DBHelper extends SQLiteOpenHelper {
 
         getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause, whereArgs);
     }
+    
+    public void updateStyle(long id, String style) {
+        String whereClause = String.format("%s = ?", COLUMN_ID);
+        String[] whereArgs = new String[]{String.valueOf(id)};
+
+        ContentValues cv = new ContentValues();
+        cv.put(UPLOAD_STYLE, style);
+
+        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause, whereArgs);        
+    }
+
+    public void updateFormat(long id, String format) {
+        String whereClause = String.format("%s = ?", COLUMN_ID);
+        String[] whereArgs = new String[]{String.valueOf(id)};
+
+        ContentValues cv = new ContentValues();
+        cv.put(UPLOAD_FORMAT, format);
+
+        getWritableDatabase().update(TABLE_UPLOADS, cv, whereClause, whereArgs);
+    }
     /* /UPLOADS */
+
+    private void addColumn(SQLiteDatabase database, String table, String column, String type)
+    {
+        database.execSQL(String.format("ALTER TABLE %s ADD COLUMN %s %s",
+                table, column, type));
+    }
 
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
         if (oldVersion < 2) {
             database.execSQL(FORMATTERS_CREATE);
             database.execSQL(STYLES_CREATE);
+            addColumn(database, TABLE_UPLOADS, UPLOAD_FORMAT, "TEXT");
+            addColumn(database, TABLE_UPLOADS, UPLOAD_STYLE, "TEXT");
         }
     }
 

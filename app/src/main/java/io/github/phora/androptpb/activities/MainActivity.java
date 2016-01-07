@@ -65,6 +65,8 @@ public class MainActivity extends ListActivity {
     private static final int OPTIONS_SET_MULTIPLE = 4;
     private static final int OPTIONS_REPLACE_SINGLE = 5;
     private static final int SET_PASTE_HINT = 6;
+    private static final int SET_PASTE_FORMAT = 7;
+    private static final int SET_PASTE_STYLE = 8;
 
     private DBHelper sqlhelper;
     private Context context;
@@ -78,6 +80,31 @@ public class MainActivity extends ListActivity {
         public MsgOrInt(String msg, int progress) {
             this.msg = msg;
             this.progress = progress;
+        }
+    }
+
+    private class RefreshFilesTask extends AsyncTask<Void, Void, Cursor> {
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            pd = new ProgressDialog(context);
+            pd.setTitle("Uploading files...");
+            pd.setCancelable(false);
+            pd.setIndeterminate(false);
+            pd.show();
+        }
+
+        @Override
+        protected Cursor doInBackground(Void... voids) {
+            return sqlhelper.getAllUploads();
+        }
+
+        @Override
+        protected void onPostExecute(Cursor cursor) {
+            pd.dismiss();
+            UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();
+            adap.changeCursor(cursor);
         }
     }
 
@@ -484,6 +511,24 @@ public class MainActivity extends ListActivity {
                             startActivityForResult(intent, SET_PASTE_HINT);
                             break;
                         case 1:
+                            intent = new Intent(MainActivity.this,
+                                    PasteFormatActivity.class);
+                            String pasteFormat = c.getString(c.getColumnIndex(DBHelper.UPLOAD_FORMAT));
+                            intent.putExtra(PasteFormatActivity.EXTRA_PASTE_FORMAT, pasteFormat);
+                            intent.putExtra(PasteFormatActivity.EXTRA_PASTE_ID, id);
+                            intent.putExtra(PasteFormatActivity.EXTRA_SERVER, serverUrl);
+                            startActivityForResult(intent, SET_PASTE_FORMAT);
+                            break;
+                        case 2:
+                            intent = new Intent(MainActivity.this,
+                                    PasteStyleActivity.class);
+                            String pasteStyle = c.getString(c.getColumnIndex(DBHelper.UPLOAD_STYLE));
+                            intent.putExtra(PasteStyleActivity.EXTRA_PASTE_STYLE, pasteStyle);
+                            intent.putExtra(PasteStyleActivity.EXTRA_PASTE_ID, id);
+                            intent.putExtra(PasteStyleActivity.EXTRA_SERVER, serverUrl);
+                            startActivityForResult(intent, SET_PASTE_STYLE);
+                            break;
+                        case 3:
                             Intent requestFilesIntent = new Intent(Intent.ACTION_GET_CONTENT);
                             requestFilesIntent.setType("*/*");
                             requestFilesIntent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -491,7 +536,7 @@ public class MainActivity extends ListActivity {
                             intent = Intent.createChooser(requestFilesIntent, getString(R.string.MainActivity_ChooseFiles));
                             startActivityForResult(intent, OPTIONS_REPLACE_SINGLE);
                             break;
-                        case 2:
+                        case 4:
                             AlertDialog.Builder b2 = new AlertDialog.Builder(ctxt);
                             final EditText et = new EditText(ctxt);
                             b2.setTitle("Enter text to upload");
@@ -554,7 +599,7 @@ public class MainActivity extends ListActivity {
         final String action = intent.getAction();
         String type = intent.getType();
 
-        ListAdapter adapter = new UploadsCursorAdapter(this, sqlhelper.getAllUploads(), false, new EditButtonListener());
+        ListAdapter adapter = new UploadsCursorAdapter(this, null, false, new EditButtonListener());
         setListAdapter(adapter);
 
         getListView().setMultiChoiceModeListener(new MultiChoiceModeListener() {
@@ -594,14 +639,29 @@ public class MainActivity extends ListActivity {
                 switch (menuItem.getItemId()) {
                     case R.id.copy_separate:
                         Log.d(LOG_TAG, "Copied things as separate links");
-                        s = getBatchSeparate();
+                        s = getBatchSeparate(false);
+                        clipdata = ClipData.newPlainText(getResources().getString(R.string.Copy_Label), s);
+                        clipboard.setPrimaryClip(clipdata);
+                        Toast.makeText(context, getString(R.string.Toast_Copy), Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.copy_w_style:
+                        Log.d(LOG_TAG, "Copied things with preferred formats and styles");
+                        s = getBatchSeparate(true);
                         clipdata = ClipData.newPlainText(getResources().getString(R.string.Copy_Label), s);
                         clipboard.setPrimaryClip(clipdata);
                         Toast.makeText(context, getString(R.string.Toast_Copy), Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.share_separate:
                         Log.d(LOG_TAG, "Sharing as separate");
-                        s = getBatchSeparate();
+                        s = getBatchSeparate(false);
+                        intent = new Intent(Intent.ACTION_SEND);
+                        intent.setType("text/plain");
+                        intent.putExtra(Intent.EXTRA_TEXT, s);
+                        startActivity(Intent.createChooser(intent, getString(R.string.Share_Title)));
+                        break;
+                    case R.id.share_w_style:
+                        Log.d(LOG_TAG, "Sharing with preferred formats and styles");
+                        s = getBatchSeparate(true);
                         intent = new Intent(Intent.ACTION_SEND);
                         intent.setType("text/plain");
                         intent.putExtra(Intent.EXTRA_TEXT, s);
@@ -666,6 +726,8 @@ public class MainActivity extends ListActivity {
             Log.d(LOG_TAG, "Doing GUI interaction");
             //other stuff
         }
+
+        new RefreshFilesTask().execute();
     }
 
     private UUIDLocalIDPair[] getDeleteCandidates() {
@@ -683,15 +745,29 @@ public class MainActivity extends ListActivity {
         return items.toArray(new UUIDLocalIDPair[items.size()]);
     }
 
-    public String getBatchSeparate() {
+    public String getBatchSeparate(boolean withFormatsAndStyles) {
         StringBuilder sb = new StringBuilder();
         SparseBooleanArray selection = getListView().getCheckedItemPositions();
 
         for (int i=0;i<getListAdapter().getCount();i++) {
             if (selection.get(i, false)) {
                 Cursor c = (Cursor)getListView().getItemAtPosition(i);
-                    sb.append(c.getString(c.getColumnIndex("complete_url")));
-                    sb.append("\n");
+                sb.append(c.getString(c.getColumnIndex("complete_url")));
+                String hint = c.getString(c.getColumnIndex(DBHelper.UPLOAD_HINT));
+                if (withFormatsAndStyles && hint.startsWith("/")) {
+                    String format = c.getString(c.getColumnIndex(DBHelper.UPLOAD_FORMAT));
+                    String style = c.getString(c.getColumnIndex(DBHelper.UPLOAD_STYLE));
+
+                    if (format != null) {
+                        sb.append("/");
+                        sb.append(format);
+                    }
+                    if (style != null) {
+                        sb.append("?style=");
+                        sb.append(style);
+                    }
+                }
+                sb.append("\n");
             }
         }
 
@@ -890,8 +966,25 @@ public class MainActivity extends ListActivity {
                 String hint = data.getStringExtra(PasteHintsActivity.EXTRA_PASTE_HINT);
 
                 sqlhelper.updateHint(pasteId, hint);
-                UploadsCursorAdapter adap = (UploadsCursorAdapter)getListAdapter();
-                adap.changeCursor(sqlhelper.getAllUploads());
+                new RefreshFilesTask().execute();
+            }
+        }
+        else if (requestCode == SET_PASTE_FORMAT) {
+            if (resultCode == RESULT_OK) {
+                long pasteId = data.getLongExtra(PasteFormatActivity.EXTRA_PASTE_ID, -1);
+                String format = data.getStringExtra(PasteFormatActivity.EXTRA_PASTE_FORMAT);
+
+                sqlhelper.updateFormat(pasteId, format);
+                new RefreshFilesTask().execute();
+            }
+        }
+        else if (requestCode == SET_PASTE_STYLE) {
+            if (resultCode == RESULT_OK) {
+                long pasteId = data.getLongExtra(PasteStyleActivity.EXTRA_PASTE_ID, -1);
+                String style = data.getStringExtra(PasteStyleActivity.EXTRA_PASTE_STYLE);
+
+                sqlhelper.updateStyle(pasteId, style);
+                new RefreshFilesTask().execute();
             }
         }
     }
